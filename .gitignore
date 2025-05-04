@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.env
+.venv
+.coverage
+.coverage.*
+.cache
+*.log
+.pytest_cache/
+.mypy_cache/
+
+# VS Code
+.vscode/
+.history
+*.code-workspace
+
+# IDEs and editors
+.idea/
+*.swp
+*.swo
+.DS_Store
+.project
+
+# Ambiente virtual
+venv/
+
+# Arquivos de build
+build/
+dist/
+*.egg-info/
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Dados de teste
+test_data/
