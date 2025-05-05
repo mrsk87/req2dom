@@ -1,0 +1,17 @@
+{
+  "name": "req2dom-frontend",
+  "version": "1.0.0",
+  "description": "Frontend Vue.js para a aplicação req2dom",
+  "scripts": {
+    "serve": "npx vite",
+    "build": "npx vite build",
+    "preview": "npx vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.0"
+  }
+}
