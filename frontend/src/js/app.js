@@ -13,6 +13,7 @@ const processBtn = document.getElementById("process-btn");
 const xmlOutput = document.getElementById("xml-output");
 const copyBtn = document.getElementById("copy-btn");
 const downloadBtn = document.getElementById("download-btn");
+const openDrawIoBtn = document.getElementById("open-drawio-btn");
 const loadingElement = document.getElementById("loading");
 
 /**
@@ -140,10 +141,30 @@ function downloadXmlFile() {
     document.body.removeChild(a);
 }
 
+/**
+ * Abre o diagrama gerado no draw.io
+ */
+function openInDrawIo() {
+    if (!xmlOutput.value) {
+        alert("Não há conteúdo XML para abrir no draw.io.");
+        return;
+    }
+
+    // Codificar o XML em base64
+    const encodedXml = encodeURIComponent(xmlOutput.value);
+    
+    // URL do draw.io com o diagrama incorporado
+    const drawIoUrl = `https://embed.diagrams.net/?splash=0&ui=kennedy&embed=1&url=data:text/xml;base64,${btoa(xmlOutput.value)}`;
+    
+    // Abrir em nova aba
+    window.open(drawIoUrl, '_blank');
+}
+
 // Adicionar event listeners
 processBtn.addEventListener("click", processRequirements);
 copyBtn.addEventListener("click", copyXmlToClipboard);
 downloadBtn.addEventListener("click", downloadXmlFile);
+openDrawIoBtn.addEventListener("click", openInDrawIo);
 
 // Permitir submeter com Enter no campo de texto
 requirementsInput.addEventListener("keydown", function(event) {
