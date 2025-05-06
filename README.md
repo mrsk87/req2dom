@@ -1,6 +1,6 @@
 # req2dom - Conversor de Requisitos para Classes de Domínio
 
-Este projeto converte requisitos textuais em classes de domínio em formato XML, compatível com ferramentas como StarUML para geração de diagramas de classes.
+Este projeto converte requisitos textuais em classes de domínio em formato XML, compatível com ferramentas como DrawIO para geração de diagramas de classes.
 
 ## Estrutura do Projeto
 
@@ -65,7 +65,7 @@ ollama pull llama3.1:8b
 
 ### 1. Iniciar o modelo Ollama
 
-Em um terminal:
+Num terminal:
 
 ```bash
 ollama run llama3.1:8b
@@ -73,7 +73,7 @@ ollama run llama3.1:8b
 
 ### 2. Iniciar o servidor backend
 
-Em outro terminal:
+Noutro terminal:
 
 ```bash
 # Ativar o ambiente virtual (se ainda não estiver ativado)
@@ -91,7 +91,7 @@ O servidor estará disponível em [http://localhost:8000](http://localhost:8000)
 
 ### 3. Aceder à aplicação
 
-Agora pode aceder à aplicação simplesmente abrindo o navegador e indo para [http://localhost:8000](http://localhost:8000).
+Agora aceder á aplicação em [http://localhost:8000](http://localhost:8000).
 
 ## Utilização
 
@@ -100,7 +100,7 @@ Agora pode aceder à aplicação simplesmente abrindo o navegador e indo para [h
 3. Aguarde enquanto o sistema processa os requisitos (isto pode demorar alguns segundos).
 4. O XML das classes de domínio gerado será exibido na área de texto à direita.
 5. Pode copiar o XML para a área de transferência ou guardá-lo como ficheiro.
-6. Importe o ficheiro XML para o StarUML ou outra ferramenta de modelagem compatível.
+6. Importe o ficheiro XML para o DrawIO ou outra ferramenta de modelagem compatível.
 
 ## Resolução de Problemas
 
