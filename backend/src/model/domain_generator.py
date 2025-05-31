@@ -1,5 +1,5 @@
 """
-Gerador de classes de domínio em formato XML
+Gerador de classes de domínio em formato JSON para draw.io
 """
 import json
 import xml.dom.minidom as md
@@ -17,7 +17,7 @@ logger = logging.getLogger("domain_generator")
 
 class DomainGenerator:
     """
-    Converte estrutura de dados de classes de domínio para formato XML
+    Converte estrutura de dados de classes de domínio para formato JSON
     compatível com draw.io
     """
     
@@ -29,7 +29,7 @@ class DomainGenerator:
     
     def _create_drawio_mxfile(self):
         """
-        Cria a estrutura base do arquivo mxfile para draw.io
+        Cria a estrutura base do ficheiro mxfile para draw.io
         
         Returns:
             Element: Elemento raiz mxfile
@@ -219,7 +219,7 @@ class DomainGenerator:
                         edge_geo.set("as", "geometry")
                         
                     except KeyError as e:
-                        logger.warning(f"Campo obrigatório ausente no relacionamento: {e}. Ignorando este relacionamento.")
+                        logger.warning(f"Campo obrigatório ausente no relacionamento: {e}. A ignorar este relacionamento.")
                         logger.debug(f"Dados do relacionamento: {rel}")
         except Exception as e:
             logger.error(f"Erro ao criar relacionamentos: {e}")
@@ -235,13 +235,13 @@ class DomainGenerator:
         Returns:
             str: JSON extraído ou texto original se não conseguir extrair JSON
         """
-        logger.info("Tentando extrair JSON do texto de resposta")
+        logger.info("A tentar extrair JSON do texto de resposta")
         
         # Padrão 1: Conteúdo entre ```json e ```
         json_pattern1 = re.search(r'```(?:json)?\s*(.*?)```', text, re.DOTALL)
         
         if json_pattern1:
-            logger.info("JSON extraído usando o padrão de código markdown")
+            logger.info("JSON extraído utilizando o padrão de código markdown")
             return json_pattern1.group(1).strip()
         
         # Padrão 2: Conteúdo entre { e o último }
@@ -249,11 +249,11 @@ class DomainGenerator:
         json_end = text.rfind('}') + 1
         
         if json_start >= 0 and json_end > json_start:
-            logger.info("JSON extraído usando o padrão de chaves")
+            logger.info("JSON extraído utilizando o padrão de chaves")
             return text[json_start:json_end].strip()
         
         # Se não conseguir extrair, retornar o texto original
-        logger.warning("Não foi possível extrair JSON do texto, retornando texto original")
+        logger.warning("Não foi possível extrair JSON do texto, a devolver texto original")
         return text
     
     def _parse_json_safely(self, json_str: str) -> Union[Dict, None]:
@@ -264,19 +264,19 @@ class DomainGenerator:
             json_str (str): String JSON para parse
             
         Returns:
-            Dict ou None: Objeto JSON parseado ou None se falhar
+            Dict ou None: Objeto JSON analisado ou None se falhar
         """
         try:
             return json.loads(json_str)
         except json.JSONDecodeError as e:
-            logger.error(f"Erro de parse JSON: {e}")
+            logger.error(f"Erro de análise JSON: {e}")
             
             # Tentar limpar a string e tentar novamente
             cleaned_json = self._extract_json_from_text(json_str)
             try:
                 return json.loads(cleaned_json)
             except json.JSONDecodeError as e2:
-                logger.error(f"Falha ao fazer parse mesmo após limpeza: {e2}")
+                logger.error(f"Falha ao analisar mesmo após limpeza: {e2}")
                 return None
     
     def generate_xml(self, domain_data_str: str) -> str:
@@ -289,7 +289,7 @@ class DomainGenerator:
         Returns:
             str: Documento XML formatado para draw.io
         """
-        logger.info(f"Iniciando geração de XML para draw.io a partir de string com {len(domain_data_str)} caracteres")
+        logger.info(f"A iniciar geração de XML para draw.io a partir de string com {len(domain_data_str)} caracteres")
         
         try:
             # Resetar posicionamento para cada nova geração
@@ -303,9 +303,9 @@ class DomainGenerator:
             domain_data = self._parse_json_safely(domain_data_str)
             
             if domain_data is None:
-                return "<mxfile><diagram><mxGraphModel><root><mxCell value=\"Erro: Não foi possível fazer parse do JSON fornecido\" vertex=\"1\"/></root></mxGraphModel></diagram></mxfile>"
+                return "<mxfile><diagram><mxGraphModel><root><mxCell value=\"Erro: Não foi possível analisar o JSON fornecido\" vertex=\"1\"/></root></mxGraphModel></diagram></mxfile>"
             
-            logger.info("JSON parseado com sucesso")
+            logger.info("JSON analisado com sucesso")
             
             # Validar estrutura mínima necessária
             if "classes" not in domain_data or not isinstance(domain_data["classes"], list):
@@ -322,7 +322,7 @@ class DomainGenerator:
                     class_id, class_name = self._create_class_element(class_data, root)
                     classes_ids[class_id] = class_name
                 except KeyError as e:
-                    logger.warning(f"Ignorando classe com dados inválidos: {e}")
+                    logger.warning(f"A ignorar classe com dados inválidos: {e}")
             
             # Criar relacionamentos
             try:

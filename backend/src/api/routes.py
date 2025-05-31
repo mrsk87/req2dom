@@ -28,27 +28,27 @@ class RequirementsRequest(BaseModel):
 class DomainResponse(BaseModel):
     """Modelo para respostas com classes de domínio"""
     success: bool
-    xml_content: Optional[str] = None
+    json_content: Optional[str] = None
     error: Optional[str] = None
 
 
 @router.post("/process", response_model=DomainResponse)
 async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
     """
-    Processa os requisitos e gera classes de domínio em formato XML
+    Processa os requisitos e gera classes de domínio em formato JSON
     
     Args:
         request (RequirementsRequest): Pedido com texto dos requisitos
         
     Returns:
-        Dict: Resposta com o conteúdo XML ou mensagem de erro
+        Dict: Resposta com o conteúdo JSON ou mensagem de erro
     """
     try:
         # Configurar o caminho do modelo se fornecido
         if request.model_path:
             llm_processor.model_path = request.model_path
         
-        # Extrair entidades de domínio usando o LLM
+        # Extrair entidades de domínio utilizando o LLM
         llm_result = llm_processor.extract_domain_entities(request.text)
         
         if "error" in llm_result:
@@ -57,19 +57,19 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
                 "error": llm_result["error"]
             }
         
-        # Gerar XML a partir das entidades extraídas
-        xml_content = domain_generator.generate_xml(llm_result["content"])
+        # Gerar JSON a partir das entidades extraídas
+        json_content = domain_generator.generate_xml(llm_result["content"])
         
-        # Verificar se houve erro na geração do XML
-        if xml_content.startswith("<Error>"):
+        # Verificar se houve erro na geração do JSON
+        if json_content.startswith("<e>"):
             return {
                 "success": False,
-                "error": xml_content.replace("<Error>", "").replace("</Error>", "")
+                "error": json_content.replace("<e>", "").replace("</e>", "")
             }
         
         return {
             "success": True,
-            "xml_content": xml_content
+            "json_content": json_content
         }
         
     except Exception as e:

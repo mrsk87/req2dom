@@ -9,7 +9,7 @@
       <InputSection @process-requirements="processRequirements" />
       
       <OutputSection 
-        :xml-content="xmlContent"
+        :json-content="jsonContent"
         :loading="loading"
         :error="error"
       />
@@ -33,7 +33,7 @@ export default {
   },
   data() {
     return {
-      xmlContent: '',
+      jsonContent: '',
       loading: false,
       error: null,
       apiUrl: 'http://localhost:8000/api'
@@ -43,7 +43,7 @@ export default {
     async processRequirements({ text, modelPath }) {
       this.loading = true
       this.error = null
-      this.xmlContent = ''
+      this.jsonContent = ''
       
       try {
         console.log("A enviar pedido para:", `${this.apiUrl}/process`)
@@ -66,7 +66,7 @@ export default {
         const result = await response.json()
         
         if (result.success) {
-          this.xmlContent = result.xml_content
+          this.jsonContent = result.json_content
         } else {
           this.error = result.error || "Ocorreu um problema ao processar os requisitos."
         }

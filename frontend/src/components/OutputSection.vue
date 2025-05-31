@@ -1,18 +1,18 @@
 <template>
   <section class="output-section">
-    <h3>Classes de Domínio (XML para draw.io)</h3>
+    <h3>Classes de Domínio (JSON para draw.io)</h3>
     <div v-if="loading" class="loading">A processar... Por favor aguarde.</div>
     <textarea 
-      :value="xmlContent"
+      :value="jsonContent"
       readonly 
-      :placeholder="error || 'O resultado em XML para draw.io aparecerá aqui...'" 
+      :placeholder="error || 'O resultado em JSON para draw.io aparecerá aqui...'" 
       rows="15"
     ></textarea>
     <div class="controls">
       <button 
         @click="copyToClipboard" 
         :disabled="!hasContent"
-      >Copiar XML</button>
+      >Copiar JSON</button>
       <button 
         @click="downloadFile" 
         :disabled="!hasContent"
@@ -29,7 +29,7 @@
 export default {
   name: 'OutputSection',
   props: {
-    xmlContent: {
+    jsonContent: {
       type: String,
       default: ''
     },
@@ -44,17 +44,17 @@ export default {
   },
   computed: {
     hasContent() {
-      return !!this.xmlContent;
+      return !!this.jsonContent;
     }
   },
   methods: {
     copyToClipboard() {
       if (!this.hasContent) {
-        alert("Não há conteúdo XML para copiar.");
+        alert("Não há conteúdo JSON para copiar.");
         return;
       }
 
-      navigator.clipboard.writeText(this.xmlContent)
+      navigator.clipboard.writeText(this.jsonContent)
         .then(() => {
           // Criar elemento temporário para feedback
           const button = event.target;
@@ -73,12 +73,12 @@ export default {
     
     downloadFile() {
       if (!this.hasContent) {
-        alert("Não há conteúdo XML para guardar.");
+        alert("Não há conteúdo JSON para guardar.");
         return;
       }
 
-      // Criar um objeto Blob com o conteúdo XML
-      const blob = new Blob([this.xmlContent], { type: "application/xml" });
+      // Criar um objeto Blob com o conteúdo JSON
+      const blob = new Blob([this.jsonContent], { type: "application/json" });
       
       // Criar URL para o Blob
       const url = URL.createObjectURL(blob);
@@ -86,7 +86,7 @@ export default {
       // Criar elemento de link para download
       const a = document.createElement("a");
       a.href = url;
-      a.download = "domain_classes.xml";
+      a.download = "domain_classes.json";
       
       // Simular clique para iniciar o download
       document.body.appendChild(a);
@@ -99,12 +99,12 @@ export default {
     
     openInDrawIo() {
       if (!this.hasContent) {
-        alert("Não há conteúdo XML para abrir no draw.io.");
+        alert("Não há conteúdo JSON para abrir no draw.io.");
         return;
       }
 
       // URL do draw.io com o diagrama incorporado
-      const drawIoUrl = `https://embed.diagrams.net/?splash=0&ui=kennedy&embed=1&url=data:text/xml;base64,${btoa(this.xmlContent)}`;
+      const drawIoUrl = `https://embed.diagrams.net/?splash=0&ui=kennedy&embed=1&url=data:text/xml;base64,${btoa(this.jsonContent)}`;
       
       // Abrir em nova aba
       window.open(drawIoUrl, '_blank');

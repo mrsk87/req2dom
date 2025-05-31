@@ -36,20 +36,20 @@ class LlamaProcessor:
             requirements_text (str): Texto com os requisitos
             
         Returns:
-            dict: Estrutura de dados com as entidades e seus relacionamentos
+            dict: Estrutura de dados com as entidades e os seus relacionamentos
         """
         start_time = time.time()
-        logger.info(f"Iniciando processamento de requisitos com {len(requirements_text)} caracteres")
+        logger.info(f"A iniciar processamento de requisitos com {len(requirements_text)} caracteres")
         
         # Preparar o prompt para o modelo
         prompt = f"""
-        Analise os seguintes requisitos e extraia as classes de domínio, seus atributos e relacionamentos. 
+        Analise os seguintes requisitos e extraia as classes de domínio, os seus atributos e relacionamentos. 
         Forneça apenas os dados estruturados em formato JSON com as classes, atributos e relacionamentos.
         
         Requisitos:
         {requirements_text}
         
-        Formato de saída (use exatamente este formato, sem texto adicional):
+        Formato de saída (utilize exatamente este formato, sem texto adicional):
         {{
             "classes": [
                 {{
@@ -74,7 +74,7 @@ class LlamaProcessor:
                 "temperature": 0.1
             }
             
-            logger.info(f"Enviando pedido para Ollama: modelo={self.model_name}")
+            logger.info(f"A enviar pedido para Ollama: modelo={self.model_name}")
             
             # Enviar pedido para a API do Ollama
             response = requests.post(
@@ -94,9 +94,9 @@ class LlamaProcessor:
             # Processar resposta do Ollama
             try:
                 result = response.json()
-                logger.info("Resposta do Ollama parseada com sucesso")
+                logger.info("Resposta do Ollama analisada com sucesso")
             except Exception as e:
-                error_msg = f"Erro ao fazer parse da resposta JSON do Ollama: {str(e)}"
+                error_msg = f"Erro ao analisar a resposta JSON do Ollama: {str(e)}"
                 logger.error(error_msg)
                 return {"error": error_msg}
             
@@ -128,11 +128,11 @@ class LlamaProcessor:
                 return {"error": error_msg}
                 
         except requests.exceptions.ConnectionError as e:
-            error_msg = f"Erro de conexão com o Ollama: {str(e)}"
+            error_msg = f"Erro de ligação com o Ollama: {str(e)}"
             logger.error(f"{error_msg}\n{traceback.format_exc()}")
             return {"error": error_msg}
         except requests.exceptions.Timeout as e:
-            error_msg = f"Timeout na comunicação com o Ollama: {str(e)}"
+            error_msg = f"Tempo limite excedido na comunicação com o Ollama: {str(e)}"
             logger.error(error_msg)
             return {"error": error_msg}
         except Exception as e:
