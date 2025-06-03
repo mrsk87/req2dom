@@ -40,13 +40,13 @@ export default {
     }
   },
   methods: {
-    async processRequirements({ text, modelPath }) {
+    async processRequirements({ text, modelPath, processingMethod }) {
       this.loading = true
       this.error = null
       this.xmlContent = ''
       
       try {
-        console.log("A enviar pedido para:", `${this.apiUrl}/process`)
+        console.log(`A enviar pedido para: ${this.apiUrl}/process com método: ${processingMethod}`)
         
         const response = await fetch(`${this.apiUrl}/process`, {
           method: "POST",
@@ -55,7 +55,8 @@ export default {
           },
           body: JSON.stringify({
             text,
-            model_path: modelPath || undefined
+            model_path: modelPath || undefined,
+            processing_method: processingMethod || "llm"
           })
         })
         
