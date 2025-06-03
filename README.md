@@ -87,7 +87,7 @@ cd backend
 uvicorn src.app:app --reload
 ```
 
-O servidor estará disponível em [http://localhost:8000](http://localhost:8000).
+O servidor estará disponível em [http://localhost:8000].
 
 ### 3. Aceder à aplicação
 
