@@ -45,7 +45,7 @@ class LlamaProcessor:
         prompt = f"""
         Analise os seguintes requisitos e extraia as classes de domínio, os seus atributos e relacionamentos. 
         Forneça apenas os dados estruturados em formato JSON com as classes, atributos e relacionamentos.
-        
+        Cada requisito tem um formato: RF(numero). texto de requisito
         Requisitos:
         {requirements_text}
         

@@ -1,0 +1,3 @@
+deeplearning nlp para conseguir  descobrir quais entidades atributos e relaçao.
+Adicionar llm extra.
+
