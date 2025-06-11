@@ -10,6 +10,8 @@ import json
 from ..model.llm_processor import LlamaProcessor
 from ..model.hybrid_processor import HybridProcessor
 from ..model.domain_generator import DomainGenerator
+from ..model.external_llm_processor import ExternalLLMProcessor
+from ..model.spacy_textacy_processor import SpacyTextacyProcessor
 
 # Configurar logging
 logger = logging.getLogger("api.routes")
@@ -21,13 +23,26 @@ router = APIRouter()
 llm_processor = LlamaProcessor()
 hybrid_processor = HybridProcessor()
 domain_generator = DomainGenerator()
+external_llm_processor = ExternalLLMProcessor()
+spacy_textacy_processor = SpacyTextacyProcessor()
+
+
+class ApiKeyStatus(BaseModel):
+    """Modelo para o status das chaves de API"""
+    openai: bool = False
+    deepseek: bool = False
+    qwen: bool = False
+    gemini: bool = False
 
 
 class RequirementsRequest(BaseModel):
     """Modelo para pedidos de processamento de requisitos"""
     text: str
     model_path: Optional[str] = None
-    processing_method: Literal["llm", "hybrid", "nlp"] = "llm"
+    api_key: Optional[str] = None
+    llm_provider: Optional[str] = "openai"
+    processing_method: Literal["llm", "llm_chatgpt", "nlp", "hybrid", "spacy_textacy"] = "llm"
+    use_env_key: Optional[bool] = False
     
     # Configuração para desativar o aviso sobre namespace protegido
     model_config = ConfigDict(protected_namespaces=())
@@ -38,6 +53,22 @@ class DomainResponse(BaseModel):
     success: bool
     xml_content: Optional[str] = None
     error: Optional[str] = None
+
+
+@router.get("/api-keys", response_model=ApiKeyStatus)
+async def get_api_key_status() -> Dict[str, bool]:
+    """
+    Verifica quais chaves de API estão configuradas no ambiente
+    
+    Returns:
+        Dict[str, bool]: Status de cada chave de API
+    """
+    return {
+        "openai": bool(external_llm_processor.env_api_keys.get("openai")),
+        "deepseek": bool(external_llm_processor.env_api_keys.get("deepseek")),
+        "qwen": bool(external_llm_processor.env_api_keys.get("qwen")),
+        "gemini": bool(external_llm_processor.env_api_keys.get("gemini"))
+    }
 
 
 @router.post("/process", response_model=DomainResponse)
@@ -60,6 +91,18 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
         
         logger.info(f"Processando requisitos com método: {request.processing_method}")
         
+        # Configurar API key para LLM externo
+        # Se for solicitado para usar a chave do .env, não sobrescrever a api_key
+        if request.processing_method == "llm_chatgpt":
+            if request.use_env_key:
+                # Usar a chave do ambiente para o provedor selecionado
+                logger.info(f"Usando chave de API do arquivo .env para o provedor {request.llm_provider}")
+                # api_key já será carregada do .env pela classe ExternalLLMProcessor
+            elif request.api_key:
+                # Usar a chave fornecida na requisição
+                logger.info("Usando chave de API fornecida na requisição")
+                external_llm_processor.api_key = request.api_key
+            
         # Extrair entidades de domínio usando o método selecionado
         if request.processing_method == "hybrid":
             processor_result = hybrid_processor.extract_domain_entities(request.text)
@@ -81,10 +124,32 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
                             "cardinalidade": rel["cardinalidade"]
                         })
                 
+                # Adicionar atributos se disponíveis na estrutura melhorada
+                if "structured_attributes" in initial_structure and class_name in initial_structure["structured_attributes"]:
+                    class_info["atributos"] = initial_structure["structured_attributes"][class_name]
+                
                 classes.append(class_info)
                 
             json_content = {"classes": classes}
             processor_result = {"content": json.dumps(json_content)}
+        elif request.processing_method == "llm_chatgpt":
+            # Configurar o provedor LLM selecionado
+            if request.llm_provider:
+                external_llm_processor.provider = request.llm_provider
+                
+                # Usar o modelo padrão para cada provedor
+                if request.llm_provider == "openai":
+                    external_llm_processor.model = "gpt-3.5-turbo"
+                elif request.llm_provider == "deepseek":
+                    external_llm_processor.model = "deepseek-chat"
+                elif request.llm_provider == "qwen":
+                    external_llm_processor.model = "qwen-turbo"
+                    
+                logger.info(f"Usando provedor LLM externo: {request.llm_provider} com modelo {external_llm_processor.model}")
+                
+            processor_result = external_llm_processor.extract_domain_entities(request.text)
+        elif request.processing_method == "spacy_textacy":
+            processor_result = spacy_textacy_processor.extract_domain_entities(request.text)
         else:  # llm é o default
             processor_result = llm_processor.extract_domain_entities(request.text)
         

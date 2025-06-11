@@ -40,24 +40,46 @@ export default {
     }
   },
   methods: {
-    async processRequirements({ text, modelPath, processingMethod }) {
+    async processRequirements(requestData) {
       this.loading = true
       this.error = null
       this.xmlContent = ''
       
       try {
-        console.log(`A enviar pedido para: ${this.apiUrl}/process com método: ${processingMethod}`)
+        console.log(`A enviar pedido para: ${this.apiUrl}/process com método: ${requestData.processingMethod}`)
+        
+        // Preparar os dados do pedido
+        const requestBody = {
+          text: requestData.text,
+          processing_method: requestData.processingMethod || "llm"
+        }
+        
+        // Adicionar parâmetros opcionais conforme necessário
+        if (requestData.modelPath) {
+          requestBody.model_path = requestData.modelPath;
+        }
+        
+        // Se não for para usar a chave do .env e tiver uma chave de API fornecida
+        if (!requestData.useEnvKey && requestData.api_key) {
+          requestBody.api_key = requestData.api_key;
+        }
+        
+        // Se tiver o provedor LLM, incluir no pedido
+        if (requestData.llm_provider) {
+          requestBody.llm_provider = requestData.llm_provider;
+        }
+        
+        // Se for para usar as chaves do .env, adicionar flag especial
+        if (requestData.useEnvKey) {
+          requestBody.use_env_key = true;
+        }
         
         const response = await fetch(`${this.apiUrl}/process`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            text,
-            model_path: modelPath || undefined,
-            processing_method: processingMethod || "llm"
-          })
+          body: JSON.stringify(requestBody)
         })
         
         if (!response.ok) {
