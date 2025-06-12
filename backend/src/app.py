@@ -11,8 +11,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from .api.routes import router
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
+# Configurar logging para console e arquivo
+log_path = Path(__file__).resolve().parent.parent.parent / "backend.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(log_path, mode="a", encoding="utf-8")
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Carregar variáveis de ambiente do arquivo .env (robusto para venv e execução de qualquer diretório)

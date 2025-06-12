@@ -15,8 +15,7 @@
         <select id="processing-method" v-model="processingMethod" @change="handleMethodChange">
           <option value="llm">LLM Local (Llama)</option>
           <option value="llm_chatgpt">LLM Externo</option>
-          <option value="nlp">NLP (spaCy)</option>
-          <option value="hybrid">Híbrido (NLP + LLM)</option>
+          <option value="hybrid">Híbrido (NLP Avançado + LLM)</option>
           <option value="spacy_textacy">NLP Avançado (spaCy + textacy)</option>
         </select>
       </div>

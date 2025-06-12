@@ -1,10 +1,9 @@
 """
-Processador que utiliza LLMs externos (OpenAI, Deepseek, Qwen, Gemini) para extrair classes de domínio
+Processador que utiliza LLMs externos (OpenAI, Deepseek, Qwen) para extrair classes de domínio
 """
 import logging
 import time
 import json
-import os
 import traceback
 import requests
 from typing import Dict, Any, Optional
@@ -30,25 +29,13 @@ class ExternalLLMProcessor:
         self.qwen_api_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
         self.qwen_models = ["qwen-max", "qwen-plus", "qwen-turbo"]
         
-        # Configurações API Google (Gemini)
-        self.gemini_api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-        self.gemini_models = ["gemini-pro"]
-        
-        # Carregar chaves da API das variáveis de ambiente
-        self.env_api_keys = {
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "deepseek": os.getenv("DEEPSEEK_API_KEY"),
-            "qwen": os.getenv("QWEN_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY")
-        }
-        
         # Configurações padrão
         self.api_key = None
         self.provider = "openai"  # Padrão: OpenAI/ChatGPT
         self.model = "gpt-3.5-turbo"  # Modelo padrão
         
         logger.info("ExternalLLMProcessor inicializado")
-    
+        
     def extract_domain_entities(self, requirements_text: str) -> Dict[str, Any]:
         """
         Extrai entidades de domínio usando a API do LLM externo selecionado
@@ -62,37 +49,10 @@ class ExternalLLMProcessor:
         start_time = time.time()
         logger.info(f"A iniciar processamento com {self.provider}/{self.model}, requisitos com {len(requirements_text)} caracteres")
         
-        # Carregar chaves de API mais recentes do ambiente (para evitar problemas de cache)
-        current_env_keys = {
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "deepseek": os.getenv("DEEPSEEK_API_KEY"),
-            "qwen": os.getenv("QWEN_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY")
-        }
-        
-        # Atualizar cache interno de chaves com os valores atuais do ambiente
-        self.env_api_keys = current_env_keys
-        
-        # Log para diagnóstico (sem expor a chave completa)
-        for provider, key in self.env_api_keys.items():
-            if key:
-                masked_key = key[:5] + "..." + key[-4:] if len(key) > 10 else "***"
-                logger.info(f"Chave {provider} carregada: {masked_key}")
-            else:
-                logger.warning(f"Chave {provider} não configurada")
-        
-        # Verificar se tem chave de API fornecida diretamente ou via variável de ambiente
-        api_key_to_use = self.api_key or self.env_api_keys.get(self.provider)
-        
-        if not api_key_to_use:
-            error_msg = f"Chave de API para {self.provider} não configurada. Configure a chave na interface ou no arquivo .env."
+        if not self.api_key:
+            error_msg = f"Chave de API não configurada. Configure a chave antes de utilizar este método."
             logger.error(error_msg)
             return {"error": error_msg}
-        else:
-            logger.info(f"Usando chave do provedor {self.provider} para processamento")
-        
-        # Usar a chave de API apropriada
-        self.api_key = api_key_to_use
         
         # Pré-processamento dos requisitos para extrair códigos RF
         processed_reqs = self._preprocess_requirements(requirements_text)
@@ -104,8 +64,6 @@ class ExternalLLMProcessor:
             return self._process_with_deepseek(processed_reqs)
         elif self.provider == "qwen":
             return self._process_with_qwen(processed_reqs)
-        elif self.provider == "gemini":
-            return self._process_with_gemini(processed_reqs)
         else:
             error_msg = f"Provedor {self.provider} não suportado."
             logger.error(error_msg)
@@ -144,7 +102,6 @@ class ExternalLLMProcessor:
         """
         Processa requisitos usando a API do OpenAI (ChatGPT)
         """
-        start_time = time.time()
         try:
             # Preparar o prompt para o OpenAI
             prompt = f"""
@@ -232,7 +189,6 @@ class ExternalLLMProcessor:
         """
         Processa requisitos usando a API do Deepseek
         """
-        start_time = time.time()
         try:
             # Preparar o prompt para o Deepseek
             prompt = f"""
@@ -280,7 +236,7 @@ class ExternalLLMProcessor:
                 timeout=45
             )
             
-            logger.info(f"Resposta recebida do Deepseek: estado={response.status_code}, tempo={time.time()-start_time:.2f}s")
+            logger.info(f"Resposta recebida do Deepseek: estado={response.status_code}")
             
             if response.status_code != 200:
                 error_msg = f"Erro na API Deepseek: {response.status_code} - {response.text}"
@@ -310,7 +266,6 @@ class ExternalLLMProcessor:
         """
         Processa requisitos usando a API do Qwen (Alibaba Cloud)
         """
-        start_time = time.time()
         try:
             # Preparar o prompt para o Qwen
             prompt = f"""
@@ -362,7 +317,7 @@ class ExternalLLMProcessor:
                 timeout=45
             )
             
-            logger.info(f"Resposta recebida do Qwen: estado={response.status_code}, tempo={time.time()-start_time:.2f}s")
+            logger.info(f"Resposta recebida do Qwen: estado={response.status_code}")
             
             if response.status_code != 200:
                 error_msg = f"Erro na API Qwen: {response.status_code} - {response.text}"
@@ -385,98 +340,6 @@ class ExternalLLMProcessor:
                 
         except Exception as e:
             error_msg = f"Erro no processamento com Qwen: {str(e)}"
-            logger.error(f"{error_msg}\n{traceback.format_exc()}")
-            return {"error": error_msg}
-    
-    def _process_with_gemini(self, requirements_text: str) -> Dict[str, Any]:
-        """
-        Processa requisitos usando a API do Google Gemini Pro
-        """
-        start_time = time.time()
-        try:
-            # Preparar o prompt para o Gemini
-            prompt = f"""
-            Analise os seguintes requisitos e extraia as classes de domínio, seus atributos e relacionamentos.
-            Forneça apenas os dados estruturados em formato JSON com as classes, atributos e relacionamentos.
-            
-            Requisitos:
-            {requirements_text}
-            
-            Formato de saída (use exatamente este formato, sem texto adicional):
-            {{
-                "classes": [
-                    {{
-                        "nome": "Nome da Classe",
-                        "atributos": [
-                            {{"nome": "nomeAtributo", "tipo": "tipoAtributo"}}
-                        ],
-                        "relacionamentos": [
-                            {{"tipo": "associacao/composicao/heranca", "alvo": "ClasseAlvo", "cardinalidade": "1..n"}}
-                        ]
-                    }}
-                ]
-            }}
-            """
-            
-            # Preparar o pedido para a API do Gemini
-            payload = {
-                "contents": [{
-                    "parts": [{
-                        "text": prompt
-                    }]
-                }],
-                "generationConfig": {
-                    "temperature": 0.1,
-                    "topP": 0.8,
-                    "topK": 40
-                }
-            }
-            
-            # Adicionar o parâmetro da API key na URL
-            url = f"{self.gemini_api_url}?key={self.api_key}"
-            
-            headers = {
-                "Content-Type": "application/json"
-            }
-            
-            logger.info(f"A enviar pedido para Google Gemini: modelo={self.model}")
-            
-            # Enviar pedido para a API do Gemini
-            response = requests.post(
-                url,
-                json=payload,
-                headers=headers,
-                timeout=45
-            )
-            
-            logger.info(f"Resposta recebida do Gemini: estado={response.status_code}, tempo={time.time()-start_time:.2f}s")
-            
-            if response.status_code != 200:
-                error_msg = f"Erro na API Gemini: {response.status_code} - {response.text}"
-                logger.error(error_msg)
-                return {"error": error_msg}
-            
-            # Processar resposta do Gemini (estrutura específica)
-            result = response.json()
-            
-            if "candidates" in result and len(result["candidates"]) > 0:
-                # Extrair o texto da resposta da estrutura específica do Gemini
-                content = ""
-                for part in result["candidates"][0]["content"]["parts"]:
-                    if "text" in part:
-                        content += part["text"]
-                
-                logger.info(f"Resposta do Gemini obtida com sucesso ({len(content)} caracteres)")
-                
-                # Extrair JSON da resposta
-                return self._extract_json_from_response(content)
-            else:
-                error_msg = "Resposta do Gemini não contém os campos esperados"
-                logger.error(error_msg)
-                return {"error": error_msg}
-                
-        except Exception as e:
-            error_msg = f"Erro no processamento com Gemini: {str(e)}"
             logger.error(f"{error_msg}\n{traceback.format_exc()}")
             return {"error": error_msg}
     

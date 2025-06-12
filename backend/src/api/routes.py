@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Dict, Any, Optional, Literal
 import logging
 import json
+import os
 
 from ..model.llm_processor import LlamaProcessor
 from ..model.hybrid_processor import HybridProcessor
@@ -41,7 +42,7 @@ class RequirementsRequest(BaseModel):
     model_path: Optional[str] = None
     api_key: Optional[str] = None
     llm_provider: Optional[str] = "openai"
-    processing_method: Literal["llm", "llm_chatgpt", "nlp", "hybrid", "spacy_textacy"] = "llm"
+    processing_method: Literal["llm", "llm_chatgpt", "hybrid", "spacy_textacy"] = "llm"
     use_env_key: Optional[bool] = False
     
     # Configuração para desativar o aviso sobre namespace protegido
@@ -64,10 +65,10 @@ async def get_api_key_status() -> Dict[str, bool]:
         Dict[str, bool]: Status de cada chave de API
     """
     return {
-        "openai": bool(external_llm_processor.env_api_keys.get("openai")),
-        "deepseek": bool(external_llm_processor.env_api_keys.get("deepseek")),
-        "qwen": bool(external_llm_processor.env_api_keys.get("qwen")),
-        "gemini": bool(external_llm_processor.env_api_keys.get("gemini"))
+        "openai": bool(os.getenv("OPENAI_API_KEY")),
+        "deepseek": bool(os.getenv("DEEPSEEK_API_KEY")),
+        "qwen": bool(os.getenv("QWEN_API_KEY")),
+        "gemini": bool(os.getenv("GEMINI_API_KEY"))
     }
 
 
@@ -106,32 +107,8 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
         # Extrair entidades de domínio usando o método selecionado
         if request.processing_method == "hybrid":
             processor_result = hybrid_processor.extract_domain_entities(request.text)
-        elif request.processing_method == "nlp":
-            # No modo NLP puro, usamos apenas a parte de NLP do processador híbrido
-            initial_structure = hybrid_processor._prepare_initial_structure(request.text)
-            
-            # Criar uma estrutura básica no formato esperado pelo gerador de domínio
-            classes = []
-            for class_name in initial_structure["candidate_classes"]:
-                class_info = {"nome": class_name, "atributos": [], "relacionamentos": []}
-                
-                # Adicionar relacionamentos identificados
-                for rel in initial_structure["potential_relationships"]:
-                    if rel["origem"] == class_name:
-                        class_info["relacionamentos"].append({
-                            "tipo": rel["tipo"],
-                            "alvo": rel["alvo"],
-                            "cardinalidade": rel["cardinalidade"]
-                        })
-                
-                # Adicionar atributos se disponíveis na estrutura melhorada
-                if "structured_attributes" in initial_structure and class_name in initial_structure["structured_attributes"]:
-                    class_info["atributos"] = initial_structure["structured_attributes"][class_name]
-                
-                classes.append(class_info)
-                
-            json_content = {"classes": classes}
-            processor_result = {"content": json.dumps(json_content)}
+        elif request.processing_method == "spacy_textacy":
+            processor_result = spacy_textacy_processor.extract_domain_entities(request.text)
         elif request.processing_method == "llm_chatgpt":
             # Configurar o provedor LLM selecionado
             if request.llm_provider:
@@ -148,8 +125,6 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
                 logger.info(f"Usando provedor LLM externo: {request.llm_provider} com modelo {external_llm_processor.model}")
                 
             processor_result = external_llm_processor.extract_domain_entities(request.text)
-        elif request.processing_method == "spacy_textacy":
-            processor_result = spacy_textacy_processor.extract_domain_entities(request.text)
         else:  # llm é o default
             processor_result = llm_processor.extract_domain_entities(request.text)
         

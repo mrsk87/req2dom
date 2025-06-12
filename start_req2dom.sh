@@ -35,6 +35,13 @@ else
     echo -e "${GREEN}[OK] Modelo llama3.1:8b já está disponível.${NC}"
 fi
 
+# Ativar ambiente virtual Python (venv)
+if [ ! -d "venv" ]; then
+    echo -e "${YELLOW}[AVISO] Ambiente virtual Python (venv) não encontrado. Criando...${NC}"
+    python3 -m venv venv
+fi
+source venv/bin/activate
+
 # Verificar dependências Python
 echo -e "${BLUE}[INFO] A verificar dependências Python...${NC}"
 cd backend
@@ -88,17 +95,28 @@ else
     echo -e "${RED}[ERRO] spaCy não está instalado corretamente.${NC}"
 fi
 
-# Verificar se NLTK está instalado e descarregar recursos necessários
-if python -c "import nltk" &> /dev/null; then
-    echo -e "${BLUE}[INFO] A verificar recursos NLTK...${NC}"
-    python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger'); nltk.download('maxent_ne_chunker'); nltk.download('words')"
-    echo -e "${GREEN}[OK] Recursos NLTK descarregados/verificados.${NC}"
+# Iniciar o modelo Ollama (Llama 3.1:8b) em background
+OLLLAMA_LOG="ollama.log"
+echo -e "${BLUE}[INFO] A iniciar o modelo Ollama (llama3.1:8b)... (log: $OLLLAMA_LOG)${NC}"
+ollama run llama3.1:8b > "$OLLLAMA_LOG" 2>&1 &
+OLLAMA_PID=$!
+
+# Aguardar o modelo iniciar
+echo -e "${BLUE}[INFO] A aguardar o modelo iniciar...${NC}"
+sleep 3
+
+# Verificar se o modelo está a funcionar
+if ! curl -s http://localhost:8000/status > /dev/null; then
+    echo -e "${RED}[ERRO] Não foi possível conectar ao modelo Ollama. Verifique o log em $OLLLAMA_LOG para mais informações.${NC}"
+    kill $OLLAMA_PID 2>/dev/null
+    exit 1
 fi
 
 # Iniciar o backend em background
-echo -e "${BLUE}[INFO] A iniciar o backend na porta 8000...${NC}"
+BACKEND_LOG="backend.log"
+echo -e "${BLUE}[INFO] A iniciar o backend na porta 8000... (log: $BACKEND_LOG)${NC}"
 cd ..
-(cd backend && python -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --log-level info) &
+(source venv/bin/activate && cd backend && python -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --log-level info) > "$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 
 # Aguardar o backend iniciar
@@ -108,15 +126,19 @@ sleep 3
 # Verificar se o backend está a funcionar
 if curl -s http://localhost:8000/status > /dev/null; then
     echo -e "${GREEN}[OK] Backend iniciado com sucesso na porta 8000!${NC}"
+    echo -e "${YELLOW}Veja o log do backend em $BACKEND_LOG${NC}"
 else
-    echo -e "${RED}[ERRO] Não foi possível iniciar o backend. Verifique os logs para mais informações.${NC}"
+    echo -e "${RED}[ERRO] Não foi possível iniciar o backend. Verifique o log em $BACKEND_LOG para mais informações.${NC}"
     kill $BACKEND_PID 2>/dev/null
     exit 1
 fi
 
 # Iniciar o frontend (frontend development server)
 echo -e "${BLUE}[INFO] A iniciar o frontend...${NC}"
+# Ativar venv para garantir ambiente correto
+source venv/bin/activate
 cd frontend
+
 
 # Verificar se as dependências Node estão instaladas
 if [ ! -d "node_modules" ]; then
@@ -146,6 +168,7 @@ function cleanup {
     echo -e "${BLUE}[INFO] A encerrar serviços...${NC}"
     kill $BACKEND_PID 2>/dev/null
     kill $FRONTEND_PID 2>/dev/null
+    kill $OLLAMA_PID 2>/dev/null
     echo -e "${GREEN}[OK] Serviços encerrados. Obrigado por utilizar o req2dom!${NC}"
     exit 0
 }

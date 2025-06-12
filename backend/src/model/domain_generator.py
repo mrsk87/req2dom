@@ -147,11 +147,7 @@ class DomainGenerator:
     def _create_relationships(self, classes_data, classes_ids, root):
         """
         Cria elementos XML para os relacionamentos entre classes no formato draw.io
-        
-        Args:
-            classes_data (List): Lista de dados das classes
-            classes_ids (Dict): Dicionário com IDs e nomes das classes
-            root: Elemento raiz XML onde adicionar os relacionamentos
+        Garante que cada relacionamento está separado por entidade e com cardinalidade explícita.
         """
         try:
             for class_data in classes_data:
@@ -194,10 +190,8 @@ class DomainGenerator:
                         elif "agregação" in rel_type or "aggregation" in rel_type:
                             style = "endArrow=diamondThin;endFill=0;endSize=14;html=1;rounded=0;"  # Agregação
                         
-                        # Cardinalidade
-                        value = ""
-                        if "cardinalidade" in rel:
-                            value = rel["cardinalidade"]
+                        # Cardinalidade sempre explícita
+                        value = rel.get("cardinalidade", "0..1")
                         
                         # Calcular pontos de conexão aproximados
                         source_x, source_y = self.class_positions.get(source_class, (0, 0))

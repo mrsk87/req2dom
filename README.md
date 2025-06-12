@@ -23,51 +23,60 @@ O req2dom é uma aplicação web que permite aos usuários:
 
 ![Exemplo de fluxo](https://i.imgur.com/example.png)
 
-## Arquitetura
-
-O sistema está dividido em duas partes principais:
+## Instalação e Execução
 
 ### Backend (Python/FastAPI)
 
-- API REST para processamento de requisitos
-- Integração com Ollama para acesso ao modelo Llama 3.1 8B
-- Processamento de linguagem natural via spaCy
-- Geração de XML para diagramas no formato draw.io
+1. Acesse a pasta do backend:
+   ```bash
+   cd backend
+   ```
+2. Crie um ambiente virtual Python (recomendado):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. Instale as dependências:
+   ```bash
+   pip install -r requirements.txt
+   pip install spacy textacy
+   python -m spacy download pt_core_news_lg  # Para português
+   # ou
+   python -m spacy download en_core_web_lg   # Para inglês
+   ```
+4. Configure as chaves de API no arquivo `.env` (veja exemplo em `.env.example`).
+5. Inicie o backend:
+   ```bash
+   uvicorn src.app:app --reload
+   ```
 
 ### Frontend (Vue.js)
 
-- Interface de usuário responsiva
-- Editor de texto para entrada de requisitos
-- Visualização do XML gerado
-- Integração direta com draw.io para visualização e edição dos diagramas
+1. Abra um novo terminal e acesse a pasta do frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run serve
+   ```
 
-## Instalação e Execução
+A interface estará disponível em http://localhost:3000 e a API em http://localhost:8000/api
 
-### Execução Automatizada
+## Configuração das Chaves de API
 
-Para iniciar automaticamente a aplicação completa:
+Para utilizar LLMs externos (OpenAI, Deepseek, Qwen, Google Gemini Pro), configure as chaves de API no arquivo `.env` dentro da pasta `backend`:
 
-```bash
-# Dar permissões de execução ao script
-chmod +x start_req2dom.sh
-
-# Executar o script
-./start_req2dom.sh
-```
-
-O script irá verificar os pré-requisitos, instalar os componentes necessários e iniciar tanto o backend quanto o frontend.
-
-### Configuração das Chaves de API
-
-Para utilizar LLMs externos, é possível configurar as chaves de API diretamente no arquivo `.env`:
-
-1. Na pasta `backend`, copie o arquivo `.env.example` para `.env`:
+1. Copie o arquivo de exemplo:
    ```bash
    cd backend
    cp .env.example .env
    ```
-
-2. Edite o arquivo `.env` com as suas chaves de API:
+2. Edite o arquivo `.env` e preencha as chaves:
    ```
    OPENAI_API_KEY=sua_chave_api_openai_aqui
    DEEPSEEK_API_KEY=sua_chave_api_deepseek_aqui
@@ -75,67 +84,9 @@ Para utilizar LLMs externos, é possível configurar as chaves de API diretament
    GEMINI_API_KEY=sua_chave_api_gemini_aqui
    ```
 
-3. As chaves configuradas no `.env` estarão disponíveis automaticamente na interface.
+> ⚠️ **Importante**: Para utilizar o método "LLM Externo" na interface, é **obrigatório** configurar a chave API correspondente no arquivo `.env` ou fornecer uma chave temporária na interface. Se o botão "Processar com chave do servidor" não funcionar, verifique se o backend está lendo corretamente o arquivo `.env` (confira os logs do backend).
 
-> ⚠️ **Segurança**: O arquivo `.env` contém informações sensíveis e não deve ser compartilhado ou versionado. 
-> Ele já está incluído no `.gitignore` para evitar commits acidentais.
-
-### Pré-requisitos
-
-- Python 3.8+
-- Node.js 16+
-- Ollama com o modelo Llama 3.1 8B instalado (para método LLM Local)
-- [Opcional] Chaves API para LLMs externos (OpenAI, Deepseek, Qwen, Google Gemini Pro)
-- [Opcional] Modelos spaCy e textacy para processamento NLP
-
-### Backend
-
-```bash
-# Acessar pasta do backend
-cd backend
-
-# Instalar dependências
-pip install -r requirements.txt
-
-# Para suporte NLP (opcional, mas recomendado)
-pip install spacy textacy
-python -m spacy download pt_core_news_lg  # Português
-# OU
-python -m spacy download en_core_web_lg   # Inglês
-
-# Iniciar o servidor (porta 8000)
-uvicorn src.app:app --reload
-```
-
-### Frontend
-
-```bash
-# Acessar pasta do frontend
-cd frontend
-
-# Instalar dependências
-npm install
-
-# Iniciar servidor de desenvolvimento (porta 3000)
-npm run serve
-
-# OU para compilar para produção
-npm run build
-```
-
-### Inicialização Completa (Recomendado)
-
-Para iniciar todo o sistema de uma só vez, use o script de inicialização automática:
-
-```bash
-# Tornar o script executável (apenas na primeira utilização)
-chmod +x start_req2dom.sh
-
-# Iniciar todo o sistema (backend + frontend)
-./start_req2dom.sh
-```
-
-Este script verifica automaticamente todas as dependências, inicia o backend e o frontend, e fornece instruções claras para acesso ao sistema.
+> ⚠️ **Segurança**: O arquivo `.env` contém informações sensíveis e não deve ser compartilhado ou versionado. Ele já está incluído no `.gitignore` para evitar commits acidentais.
 
 ## Métodos de Processamento
 
@@ -232,8 +183,7 @@ req2dom/
 │           ├── domain_generator.py   # Gerador de XML
 │           ├── llm_processor.py      # Processamento via LLM local
 │           ├── external_llm_processor.py  # Processamento via APIs externas (ChatGPT, Deepseek, Qwen, Gemini Pro)
-│           ├── alt_nlp_processor.py  # Processamento via textacy (avançado)
-│           └── hybrid_processor.py   # Processamento híbrido NLP+LLM
+│           ├── hybrid_processor.py   # Processamento híbrido NLP+LLM
 │
 └── frontend/          # Interface web Vue.js
     ├── index.html     # Página principal
@@ -280,3 +230,44 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para m
 ## Contato
 
 Para dúvidas ou sugestões, entre em contato com a equipe de desenvolvimento.
+
+## Inicializando manualmente
+
+### Backend
+
+Para iniciar o backend manualmente:
+
+1. Navegue até a pasta backend:
+   ```bash
+   cd backend
+   ```
+
+2. Ative o ambiente virtual. Importante: O ambiente virtual deve estar na pasta `backend/venv`:
+   ```bash
+   source venv/bin/activate  # No Linux/macOS
+   # ou
+   venv\Scripts\activate      # No Windows
+   ```
+
+3. Inicie o servidor FastAPI:
+   ```bash
+   python -m uvicorn src.app:app --reload --host 127.0.0.1 --port 8000
+   ```
+   
+> ⚠️ **Importante**: O backend deve ser iniciado a partir da pasta `backend` para garantir que o arquivo `.env` seja carregado corretamente.
+
+### Frontend
+
+Para iniciar o frontend manualmente:
+
+1. Acesse a pasta do frontend:
+   ```bash
+   cd frontend
+   ```
+
+2. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run serve
+   ```
+
+A interface estará disponível em http://localhost:3000

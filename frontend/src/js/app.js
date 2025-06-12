@@ -72,10 +72,16 @@ async function processRequirements() {
         if (result.success) {
             // Mostrar XML resultante
             xmlOutput.value = result.xml_content;
+            copyBtn.disabled = false;
+            downloadBtn.disabled = false;
+            openDrawIoBtn.disabled = false;
             console.log("XML gerado com sucesso");
         } else {
             // Mostrar erro
             xmlOutput.value = `Erro: ${result.error || "Ocorreu um problema ao processar os requisitos."}`;
+            copyBtn.disabled = false;
+            downloadBtn.disabled = false;
+            openDrawIoBtn.disabled = false;
             console.error("Erro retornado pelo servidor:", result.error);
         }
     } catch (error) {
