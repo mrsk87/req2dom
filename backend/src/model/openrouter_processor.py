@@ -59,29 +59,52 @@ class OpenRouterProcessor:
             
             # Preparar o prompt para o OpenRouter
             prompt = f"""
-Analise os seguintes requisitos e extraia as classes de domínio, seus atributos e relacionamentos.
-Forneça apenas os dados estruturados em formato JSON com as classes, atributos e relacionamentos.
+Analise os seguintes requisitos funcionais de um sistema e extraia as classes de domínio, seus atributos e relacionamentos.
 
-Requisitos:
+INSTRUÇÕES IMPORTANTES:
+1. Cada requisito RF(número) é independente, mas pode referenciar entidades dos outros requisitos
+2. Identifique entidades principais (substantivos) como classes do domínio
+3. Para cada classe, identifique atributos relevantes baseados no contexto dos requisitos
+4. Defina relacionamentos entre classes com cardinalidades precisas
+5. Use tipos de dados apropriados (String, Integer, Double, Date, DateTime, Boolean, etc.)
+6. Considere todos os papéis/atores mencionados como possíveis classes
+7. Considere todas as ações e objetos como potenciais classes e atributos
+
+TIPOS DE ENTIDADES A PROCURAR:
+- Atores/Usuários (usuários do sistema, papéis específicos)
+- Objetos/Entidades principais (entidades centrais do domínio)
+- Conceitos de negócio (processos, eventos, documentos)
+
+TIPOS DE ATRIBUTOS COMUNS:
+- Identificação: id, codigo, numero
+- Nomes e descrições: nome, titulo, descricao, observacoes
+- Dados pessoais: email, telefone, endereco
+- Datas e horários: dataInicio, dataFim, dataHora, prazo
+- Valores: preco, custo, valor, quantidade
+- Estados: status, ativo, disponivel
+- Medidas: peso, altura, duracao
+
+REQUISITOS A ANALISAR:
 {processed_text}
 
-Formato de saída (use exatamente este formato, sem texto adicional):
+FORMATO DE SAÍDA (JSON puro, sem markdown ou texto adicional):
 {{
     "classes": [
         {{
-            "nome": "Nome da Classe",
+            "nome": "NomeDaClasse",
             "atributos": [
-                {{"nome": "nomeAtributo", "tipo": "tipoAtributo"}}
+                {{"nome": "id", "tipo": "Integer"}},
+                {{"nome": "nome", "tipo": "String"}},
+                {{"nome": "outroAtributo", "tipo": "String|Integer|Double|Date|DateTime|Boolean"}}
             ],
             "relacionamentos": [
-                {{"tipo": "associacao", "alvo": "ClasseAlvo", "cardinalidade": "1..n"}},
-                {{"tipo": "composicao", "alvo": "ClasseAlvo", "cardinalidade": "1..1"}},
-                {{"tipo": "heranca", "alvo": "ClasseAlvo", "cardinalidade": "1..1"}}
+                {{"tipo": "associacao", "alvo": "OutraClasse", "cardinalidade": "1..1|1..n|0..1|0..n"}},
+                {{"tipo": "composicao", "alvo": "ClasseComposta", "cardinalidade": "1..n"}},
+                {{"tipo": "agregacao", "alvo": "ClasseAgregada", "cardinalidade": "0..n"}}
             ]
         }}
     ]
-}}
-"""
+}}"""
             
             # Preparar o pedido para a API do OpenRouter
             payload = {
