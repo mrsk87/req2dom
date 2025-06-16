@@ -190,17 +190,14 @@ class DomainGenerator:
                         elif "agregação" in rel_type or "aggregation" in rel_type:
                             style = "endArrow=diamondThin;endFill=0;endSize=14;html=1;rounded=0;"  # Agregação
                         
-                        # Cardinalidade sempre explícita
-                        value = rel.get("cardinalidade", "0..1")
+                        # Dividir cardinalidade (ex: "1..n" em "1" e "n")
+                        cardinality = rel.get("cardinalidade", "0..1")
+                        source_card, target_card = self._parse_cardinality(cardinality)
                         
-                        # Calcular pontos de conexão aproximados
-                        source_x, source_y = self.class_positions.get(source_class, (0, 0))
-                        target_x, target_y = self.class_positions.get(target_class, (300, 0))
-                        
-                        # Criar célula de relacionamento
+                        # Criar célula de relacionamento (sem texto na linha principal)
                         edge = ET.SubElement(root, "mxCell")
                         edge.set("id", rel_id)
-                        edge.set("value", value)
+                        edge.set("value", "")  # Sem valor na linha principal
                         edge.set("style", style)
                         edge.set("edge", "1")
                         edge.set("parent", "1")
@@ -211,6 +208,14 @@ class DomainGenerator:
                         edge_geo = ET.SubElement(edge, "mxGeometry")
                         edge_geo.set("relative", "1")
                         edge_geo.set("as", "geometry")
+                        
+                        # Criar label para cardinalidade próximo à classe de origem (no início da linha)
+                        if source_card:
+                            self._create_edge_label(root, source_card, rel_id, f"card_source_{rel_id}", -1)
+                        
+                        # Criar label para cardinalidade próximo à classe de destino (no fim da linha)  
+                        if target_card:
+                            self._create_edge_label(root, target_card, rel_id, f"card_target_{rel_id}", 1)
                         
                     except KeyError as e:
                         logger.warning(f"Campo obrigatório ausente no relacionamento: {e}. Ignorando este relacionamento.")
@@ -273,6 +278,54 @@ class DomainGenerator:
                 logger.error(f"Falha ao fazer parse mesmo após limpeza: {e2}")
                 return None
     
+    def _parse_cardinality(self, cardinality: str) -> tuple:
+        """
+        Divide a cardinalidade em duas partes (origem e destino)
+        
+        Args:
+            cardinality (str): Cardinalidade no formato "1..n", "1..1", "0..n", etc.
+            
+        Returns:
+            tuple: (cardinalidade_origem, cardinalidade_destino)
+        """
+        if ".." in cardinality:
+            parts = cardinality.split("..")
+            return parts[0], parts[1]
+        else:
+            # Se não tem "..", assumir que é uma cardinalidade simples
+            return cardinality, cardinality
+    
+    def _create_edge_label(self, root, text: str, edge_id: str, label_id: str, position: int):
+        """
+        Cria um label de cardinalidade conectado à linha de relacionamento
+        
+        Args:
+            root: Elemento raiz XML onde adicionar o label
+            text (str): Texto da cardinalidade
+            edge_id (str): ID da linha de relacionamento pai
+            label_id (str): ID único do label
+            position (int): -1 para próximo da origem, 1 para próximo do destino
+        """
+        label = ET.SubElement(root, "mxCell")
+        label.set("id", label_id)
+        label.set("value", text)
+        label.set("style", "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontColor=#666666;")
+        label.set("vertex", "1")
+        label.set("connectable", "0")
+        label.set("parent", edge_id)  # Conectado à linha de relacionamento
+        
+        # Geometria do label relativa à linha
+        label_geo = ET.SubElement(label, "mxGeometry")
+        label_geo.set("x", str(position * 0.8))  # -0.8 para origem, 0.8 para destino
+        label_geo.set("relative", "1")
+        label_geo.set("as", "geometry")
+        
+        # Adicionar offset para melhor posicionamento
+        label_offset = ET.SubElement(label_geo, "mxPoint")
+        label_offset.set("x", "0")
+        label_offset.set("y", "-10")  # Ligeiramente acima da linha
+        label_offset.set("as", "offset")
+
     def generate_xml(self, domain_data_str: str) -> str:
         """
         Gera XML no formato draw.io a partir dos dados de domínio
