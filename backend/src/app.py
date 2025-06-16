@@ -31,21 +31,14 @@ try:
     if dotenv_path.exists():
         load_dotenv(dotenv_path=dotenv_path, override=True)
         logger.info(f"Variáveis de ambiente carregadas de {dotenv_path}")
-        logger.info(f"OPENAI_API_KEY lida: {os.getenv('OPENAI_API_KEY')}")
     else:
         logger.warning(f"Arquivo .env não encontrado em {dotenv_path}")
 except Exception as e:
     logger.error(f"Erro ao carregar .env: {e}")
 
 # Validar se há chaves de API configuradas
-if os.getenv("OPENAI_API_KEY"):
-    logger.info("Chave de API OpenAI configurada via variáveis de ambiente")
-if os.getenv("DEEPSEEK_API_KEY"):
-    logger.info("Chave de API Deepseek configurada via variáveis de ambiente")
-if os.getenv("QWEN_API_KEY"):
-    logger.info("Chave de API Qwen configurada via variáveis de ambiente")
-if os.getenv("GEMINI_API_KEY"):
-    logger.info("Chave de API Gemini configurada via variáveis de ambiente")
+if os.getenv("OPENROUTER_API_KEY"):
+    logger.info("Chave de API OpenRouter configurada via variáveis de ambiente")
 
 # Obter caminho do diretório raiz do projeto
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

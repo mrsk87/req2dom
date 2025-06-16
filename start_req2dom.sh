@@ -35,16 +35,18 @@ else
     echo -e "${GREEN}[OK] Modelo llama3.1:8b já está disponível.${NC}"
 fi
 
-# Ativar ambiente virtual Python (venv)
+# Navegar para o backend e configurar ambiente virtual
+cd backend
+
+# Ativar ambiente virtual Python (venv) dentro do backend
 if [ ! -d "venv" ]; then
-    echo -e "${YELLOW}[AVISO] Ambiente virtual Python (venv) não encontrado. Criando...${NC}"
+    echo -e "${YELLOW}[AVISO] Ambiente virtual Python (venv) não encontrado no backend. Criando...${NC}"
     python3 -m venv venv
 fi
 source venv/bin/activate
 
 # Verificar dependências Python
 echo -e "${BLUE}[INFO] A verificar dependências Python...${NC}"
-cd backend
 python -m pip install -r requirements.txt
 
 # Verificar se o arquivo .env existe, se não, criar a partir do .env.example
@@ -57,11 +59,8 @@ elif [ ! -f ".env" ] && [ ! -f ".env.example" ]; then
     cat > .env << EOL
 # Configurações de ambiente para req2dom
 
-# API Keys para LLMs externos
-OPENAI_API_KEY=
-DEEPSEEK_API_KEY=
-QWEN_API_KEY=
-GEMINI_API_KEY=
+# API Key para OpenRouter (obrigatória para LLM externo)
+OPENROUTER_API_KEY=
 
 # Configuração de idioma para processamento NLP
 LANGUAGE_MODEL=pt_core_news_lg
@@ -106,7 +105,7 @@ echo -e "${BLUE}[INFO] A aguardar o modelo iniciar...${NC}"
 sleep 3
 
 # Verificar se o modelo está a funcionar
-if ! curl -s http://localhost:8000/status > /dev/null; then
+if ! curl -s http://localhost:11434/api/tags > /dev/null; then
     echo -e "${RED}[ERRO] Não foi possível conectar ao modelo Ollama. Verifique o log em $OLLLAMA_LOG para mais informações.${NC}"
     kill $OLLAMA_PID 2>/dev/null
     exit 1
@@ -115,8 +114,7 @@ fi
 # Iniciar o backend em background
 BACKEND_LOG="backend.log"
 echo -e "${BLUE}[INFO] A iniciar o backend na porta 8000... (log: $BACKEND_LOG)${NC}"
-cd ..
-(source venv/bin/activate && cd backend && python -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --log-level info) > "$BACKEND_LOG" 2>&1 &
+python -m uvicorn src.app:app --host 0.0.0.0 --port 8000 --log-level info > "$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 
 # Aguardar o backend iniciar
@@ -124,7 +122,7 @@ echo -e "${BLUE}[INFO] A aguardar o backend iniciar...${NC}"
 sleep 3
 
 # Verificar se o backend está a funcionar
-if curl -s http://localhost:8000/status > /dev/null; then
+if curl -s http://localhost:8000/api/api-keys > /dev/null; then
     echo -e "${GREEN}[OK] Backend iniciado com sucesso na porta 8000!${NC}"
     echo -e "${YELLOW}Veja o log do backend em $BACKEND_LOG${NC}"
 else
@@ -135,9 +133,7 @@ fi
 
 # Iniciar o frontend (frontend development server)
 echo -e "${BLUE}[INFO] A iniciar o frontend...${NC}"
-# Ativar venv para garantir ambiente correto
-source venv/bin/activate
-cd frontend
+cd ../frontend
 
 
 # Verificar se as dependências Node estão instaladas

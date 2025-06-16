@@ -60,13 +60,13 @@ export default {
         }
         
         // Se não for para usar a chave do .env e tiver uma chave de API fornecida
-        if (!requestData.useEnvKey && requestData.api_key) {
-          requestBody.api_key = requestData.api_key;
+        if (!requestData.useEnvKey && requestData.apiKey) {
+          requestBody.api_key = requestData.apiKey;
         }
         
-        // Se tiver o provedor LLM, incluir no pedido
-        if (requestData.llm_provider) {
-          requestBody.llm_provider = requestData.llm_provider;
+        // Se tiver o modelo OpenRouter, incluir no pedido
+        if (requestData.openrouterModel) {
+          requestBody.openrouter_model = requestData.openrouterModel;
         }
         
         // Se for para usar as chaves do .env, adicionar flag especial

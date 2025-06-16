@@ -69,28 +69,27 @@ A interface estará disponível em http://localhost:3000 e a API em http://local
 
 ## Configuração das Chaves de API
 
-Para utilizar LLMs externos (OpenAI, Deepseek, Qwen, Google Gemini Pro), configure as chaves de API no arquivo `.env` dentro da pasta `backend`:
+Para utilizar LLMs externos via OpenRouter, configure a chave de API no arquivo `.env` dentro da pasta `backend`:
 
 1. Copie o arquivo de exemplo:
    ```bash
    cd backend
    cp .env.example .env
    ```
-2. Edite o arquivo `.env` e preencha as chaves:
+2. Edite o arquivo `.env` e preencha a chave do OpenRouter:
    ```
-   OPENAI_API_KEY=sua_chave_api_openai_aqui
-   DEEPSEEK_API_KEY=sua_chave_api_deepseek_aqui
-   QWEN_API_KEY=sua_chave_api_qwen_aqui
-   GEMINI_API_KEY=sua_chave_api_gemini_aqui
+   OPENROUTER_API_KEY=sua_chave_openrouter_aqui
    ```
 
-> ⚠️ **Importante**: Para utilizar o método "LLM Externo" na interface, é **obrigatório** configurar a chave API correspondente no arquivo `.env` ou fornecer uma chave temporária na interface. Se o botão "Processar com chave do servidor" não funcionar, verifique se o backend está lendo corretamente o arquivo `.env` (confira os logs do backend).
+O OpenRouter permite acesso a múltiplos modelos LLM (GPT-4, Claude, Llama, Gemini, etc.) através de uma única API.
+
+> ⚠️ **Importante**: Para utilizar o método "LLM Externo (OpenRouter)" na interface, é **obrigatório** configurar a chave API correspondente no arquivo `.env` ou fornecer uma chave temporária na interface. Se o botão "Processar com chave do servidor" não funcionar, verifique se o backend está lendo corretamente o arquivo `.env` (confira os logs do backend).
 
 > ⚠️ **Segurança**: O arquivo `.env` contém informações sensíveis e não deve ser compartilhado ou versionado. Ele já está incluído no `.gitignore` para evitar commits acidentais.
 
 ## Métodos de Processamento
 
-A ferramenta oferece cinco métodos para analisar e extrair classes de domínio a partir de requisitos textuais:
+A ferramenta oferece quatro métodos para analisar e extrair classes de domínio a partir de requisitos textuais:
 
 ### 1. LLM Local (Llama)
 
@@ -102,38 +101,31 @@ Usa exclusivamente o modelo Llama 3.1 8B local para analisar os requisitos. Este
 - Timeout estendido de 10 minutos para processamento de requisitos complexos
 - Ideal para requisitos complexos ou ambíguos
 
-### 2. LLM Externo (ChatGPT, Deepseek, Qwen, Google Gemini Pro)
+### 2. LLM Externo (OpenRouter)
 
-Utiliza APIs de LLMs externos para processar os requisitos. Este método:
-- Proporciona processamento de alta qualidade na cloud
-- Suporta múltiplos provedores:
-  - OpenAI (ChatGPT)
-  - Deepseek
-  - Qwen (Alibaba Cloud)
-  - Google Gemini Pro
-- Requer uma chave de API válida do provedor escolhido
+Utiliza a API do OpenRouter para acesso a múltiplos LLMs na cloud. Este método:
+- Proporciona processamento de alta qualidade através do OpenRouter
+- Suporta múltiplos modelos:
+  - OpenAI (GPT-3.5, GPT-4)
+  - Anthropic (Claude 3 Haiku, Claude 3 Sonnet)
+  - Meta (Llama 3.1 8B, Llama 3.1 70B)
+  - Google (Gemma 2 9B)
+- Requer uma chave de API válida do OpenRouter
 - Oferece resultados consistentes e precisos
 - Ideal para requisitos complexos quando não há recursos locais suficientes
 
-### 3. NLP (Processamento de Linguagem Natural com spaCy)
-
-Usa técnicas tradicionais de NLP através do spaCy para identificar entidades e relacionamentos. Este método:
-- É mais rápido e usa menos recursos
-- Baseia-se em análise gramatical e de dependências
-- Pode ser menos preciso em textos ambíguos
-- Funciona bem com requisitos claros e estruturados
-
-### 4. NLP Avançado (spaCy + textacy)
+### 3. NLP Avançado (spaCy + textacy)
 
 Combina o poder do spaCy com o textacy para uma análise linguística mais profunda. Este método:
 - Oferece extração avançada de entidades e relacionamentos
 - Usa modelos de linguagem treinados para maior precisão
 - Ideal para textos complexos que requerem uma compreensão mais sutil
 - Pode identificar padrões e entidades que outros métodos não conseguem
+- É mais rápido e usa menos recursos que os métodos baseados em LLM
 
-### 5. Híbrido (NLP + LLM)
+### 4. Híbrido (NLP + LLM)
 
-Combina as abordagens: usa NLP para identificação inicial das entidades e o LLM para refinamento. Este método:
+Combina as abordagens: usa NLP avançado para identificação inicial das entidades e o LLM para refinamento. Este método:
 - Oferece um bom equilíbrio entre velocidade e qualidade
 - Reduz a carga sobre o LLM ao fornecer estrutura inicial
 - Combina precisão gramatical do NLP com compreensão semântica do LLM

@@ -10,10 +10,6 @@
     <p class="status-note">
       As chaves configuradas no servidor podem ser usadas sem necessidade de introduzir novas chaves.
     </p>
-    <!-- Debug info -->
-    <small style="color: #666; font-size: 0.8em;">
-      Debug: {{ JSON.stringify(apiKeys) }}
-    </small>
   </div>
 </template>
 
@@ -28,26 +24,17 @@ export default {
     }
   },
   async mounted() {
-    console.log('ApiKeyStatus: componente montado, carregando status das chaves...')
     await this.fetchApiKeysStatus()
   },
   methods: {
     async fetchApiKeysStatus() {
       try {
-        console.log('ApiKeyStatus: fazendo requisição para http://localhost:8000/api/api-keys')
-        const response = await fetch('http://localhost:8000/api/api-keys')
-        console.log('ApiKeyStatus: resposta recebida:', response.status, response.statusText)
-        
+        const response = await fetch('/api/api-keys')
         if (response.ok) {
-          const data = await response.json()
-          console.log('ApiKeyStatus: dados recebidos:', data)
-          this.apiKeys = data
-          console.log('ApiKeyStatus: apiKeys atualizado:', this.apiKeys)
-        } else {
-          console.error('ApiKeyStatus: erro HTTP:', response.status, response.statusText)
+          this.apiKeys = await response.json()
         }
       } catch (error) {
-        console.error('ApiKeyStatus: erro ao buscar status das chaves de API:', error)
+        console.error('Erro ao buscar status das chaves de API:', error)
       }
     }
   }
