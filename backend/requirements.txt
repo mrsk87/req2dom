@@ -3,3 +3,9 @@ uvicorn==0.24.0
 pydantic==2.4.2
 requests==2.31.0
 lxml==4.9.3
+spacy>=3.0.0
+textacy>=0.12.0
+python-dotenv==1.0.0
+# Para instalar o modelo em português: python -m spacy download pt_core_news_lg
+# Para instalar o modelo em inglês: python -m spacy download en_core_web_lg
+# NLTK removido - não é mais necessário para NLP alternativo

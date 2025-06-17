@@ -81,7 +81,7 @@ class LlamaProcessor:
                 self.api_url,
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=120  # Aumentar o timeout para 2 minutos
+                timeout=600  # Timeout de 10 minutos para requisitos complexos
             )
             
             logger.info(f"Resposta recebida do Ollama: status={response.status_code}, tempo={time.time()-start_time:.2f}s")

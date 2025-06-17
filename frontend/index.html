@@ -4,42 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>req2dom - Requisitos para Classes de Domínio</title>
-    <link rel="stylesheet" href="src/css/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <header>
-        <h1>req2dom</h1>
-        <h2>Conversão de Requisitos para Classes de Domínio</h2>
-    </header>
+    <div id="app">
+        <!-- O Vue.js vai montar a aplicação aqui -->
+    </div>
     
-    <main>
-        <section class="input-section">
-            <h3>Introduza os Requisitos</h3>
-            <textarea id="requirements-input" 
-                      placeholder="Exemplo: O sistema deve permitir aos utilizadores registarem-se com nome, email e password. Cada utilizador pode criar vários projetos..."
-                      rows="10"></textarea>
-            <div class="controls">
-                <input type="text" id="model-path" placeholder="Caminho para o modelo Llama (opcional)" />
-                <button id="process-btn">Processar</button>
-            </div>
-        </section>
-        
-        <section class="output-section">
-            <h3>Classes de Domínio (XML para draw.io)</h3>
-            <div id="loading" class="hidden">A processar... Por favor aguarde.</div>
-            <textarea id="xml-output" readonly placeholder="O resultado em XML para draw.io aparecerá aqui..." rows="15"></textarea>
-            <div class="controls">
-                <button id="copy-btn">Copiar XML</button>
-                <button id="download-btn">Guardar como Ficheiro</button>
-                <button id="open-drawio-btn">Abrir no draw.io</button>
-            </div>
-        </section>
-    </main>
-    
-    <footer>
-        <p>req2dom - Projeto de conversão de requisitos para classes de domínio</p>
-    </footer>
-    
-    <script src="src/js/app.js"></script>
+    <script type="module" src="src/main.js"></script>
 </body>
 </html>
