@@ -473,61 +473,6 @@ class StanzaProcessor:
                 unique_relationships.append(rel)
         
         return unique_relationships
-                                for cls_lower, cls_original in classes_in_sent.items():
-                                    if cls_lower in child.text.lower():
-                                        object_class = cls_original
-                        
-                        # Se encontrou as duas partes, criar relacionamento
-                        if subject_class and object_class and subject_class != object_class:
-                            # Determinar cardinalidade básica
-                            cardinality = "1.1"  # Padrão
-                            if verb in ['tem', 'possui', 'contém']:
-                                cardinality = "1..*"
-                            
-                            # Adicionar relacionamento único
-                            exists = any(
-                                r["source"] == subject_class and r["target"] == object_class 
-                                for r in relationships
-                            )
-                            
-                            if not exists:
-                                relationships.append({
-                                    "source": subject_class,
-                                    "target": object_class,
-                                    "tipo": rel_type,
-                                    "cardinalidade": cardinality
-                                })
-        
-        # 2. Se não encontrou relacionamentos sintáticos, verificar padrões comuns
-        if not relationships and len(class_names) >= 2:
-            # Relacionamentos semanticamente lógicos baseados em tipos
-            for class1 in class_names:
-                for class2 in class_names:
-                    if class1 != class2:
-                        c1_lower = class1.lower()
-                        c2_lower = class2.lower()
-                        
-                        # Padrões comuns de relacionamento (pessoa-objeto)
-                        if self._is_person_entity(c1_lower) and not self._is_person_entity(c2_lower):
-                            # Pessoas normalmente usam ou gerenciam coisas
-                            relationships.append({
-                                "source": class1,
-                                "target": class2,
-                                "tipo": "control" if c2_lower in ["sistema", "pedido", "encomenda"] else "association",
-                                "cardinalidade": "1..*"
-                            })
-                            break  # Apenas um relacionamento
-        
-        # Máximo 1 relacionamento por entidade para evitar diagramas muito complexos
-        unique_rels = []
-        seen_sources = set()
-        
-        for rel in relationships:
-            if rel["source"] not in seen_sources:
-                seen_sources.add(rel["source"])
-                unique_rels.append(rel)
-        
-        return unique_rels
 
     def _find_matching_class(self, text: str, class_names: List[str]) -> str:
         """Encontra a classe que melhor corresponde ao texto de modo mais preciso"""

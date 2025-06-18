@@ -14,9 +14,21 @@
         <select id="processing-method" v-model="processingMethod" @change="handleMethodChange">
           <option value="llm">LLM Local (Llama)</option>
           <option value="llm_openrouter">LLM Externo (OpenRouter)</option>
-          <option value="spacy_textacy">NLP Avançado (spaCy + textacy)</option>
+          <option value="spacy_textacy">NLP Tradicional (spaCy + textacy)</option>
+          <option value="stanza">NLP Avançado (Stanza - PT)</option>
           <option value="hybrid">Híbrido (NLP + LLM)</option>
         </select>
+      </div>
+      
+      <div class="input-group" v-if="processingMethod === 'hybrid'">
+        <label for="nlp-engine">Motor NLP para o modo híbrido:</label>
+        <select id="nlp-engine" v-model="nlpEngine">
+          <option value="stanza">Stanza (Recomendado para Português)</option>
+          <option value="spacy">spaCy + textacy</option>
+        </select>
+        <small class="help-text">
+          Stanza oferece melhor precisão para português de Portugal
+        </small>
       </div>
       
       <div class="input-group" v-if="processingMethod === 'llm' || processingMethod === 'hybrid'">
@@ -104,6 +116,7 @@ export default {
       apiKey: '',
       openrouterModel: '',
       processingMethod: 'llm',
+      nlpEngine: 'stanza',
       processing: false
     }
   },
@@ -126,6 +139,7 @@ export default {
         modelPath: this.modelPath,
         processingMethod: this.processingMethod,
         openrouterModel: this.openrouterModel,
+        nlpEngine: this.nlpEngine,
         useEnvKey: true
       });
       
@@ -145,6 +159,7 @@ export default {
         modelPath: this.modelPath,
         processingMethod: this.processingMethod,
         openrouterModel: this.openrouterModel,
+        nlpEngine: this.nlpEngine,
         useEnvKey: true
       });
       
@@ -169,6 +184,7 @@ export default {
         modelPath: this.modelPath,
         processingMethod: this.processingMethod,
         openrouterModel: this.openrouterModel,
+        nlpEngine: this.nlpEngine,
         apiKey: this.apiKey,
         useEnvKey: false
       });

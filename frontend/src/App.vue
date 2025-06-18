@@ -59,6 +59,11 @@ export default {
           requestBody.model_path = requestData.modelPath;
         }
         
+        // Adicionar motor NLP se especificado (para modo híbrido)
+        if (requestData.nlpEngine) {
+          requestBody.nlp_engine = requestData.nlpEngine;
+        }
+        
         // Se não for para usar a chave do .env e tiver uma chave de API fornecida
         if (!requestData.useEnvKey && requestData.apiKey) {
           requestBody.api_key = requestData.apiKey;
