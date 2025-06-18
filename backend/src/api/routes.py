@@ -13,6 +13,7 @@ from ..model.hybrid_processor import HybridProcessor
 from ..model.domain_generator import DomainGenerator
 from ..model.openrouter_processor import OpenRouterProcessor
 from ..model.spacy_textacy_processor import SpacyTextacyProcessor
+from ..model.stanza_processor import StanzaProcessor
 
 # Configurar logging
 logger = logging.getLogger("api.routes")
@@ -22,10 +23,12 @@ router = APIRouter()
 
 # Inicializar componentes
 llm_processor = LlamaProcessor()
-hybrid_processor = HybridProcessor()
+# Usar o Stanza como processador NLP padrão para português de Portugal
+hybrid_processor = HybridProcessor(nlp_engine="stanza")
 domain_generator = DomainGenerator()
 openrouter_processor = OpenRouterProcessor()
 spacy_textacy_processor = SpacyTextacyProcessor()
+stanza_processor = StanzaProcessor()
 
 
 class RequirementsRequest(BaseModel):
@@ -34,8 +37,9 @@ class RequirementsRequest(BaseModel):
     model_path: Optional[str] = None
     api_key: Optional[str] = None
     openrouter_model: Optional[str] = None
-    processing_method: Literal["llm", "llm_openrouter", "spacy_textacy", "hybrid"] = "llm"
+    processing_method: Literal["llm", "llm_openrouter", "spacy_textacy", "stanza", "hybrid"] = "hybrid"
     use_env_key: Optional[bool] = True
+    nlp_engine: Optional[str] = "stanza"
     
     # Configuração para desativar o aviso sobre namespace protegido
     model_config = ConfigDict(protected_namespaces=())
@@ -82,6 +86,16 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
         
         # Extrair entidades de domínio usando o método selecionado
         if request.processing_method == "hybrid":
+            # Se especificado, usar o motor NLP solicitado
+            if hasattr(request, 'nlp_engine') and request.nlp_engine != hybrid_processor.nlp_advanced.__class__.__name__.lower().replace('processor', ''):
+                # Reconstruir o processador híbrido com o motor correto
+                if request.nlp_engine == "stanza":
+                    hybrid_processor = HybridProcessor(nlp_engine="stanza")
+                    logger.info("Reconfigurando para usar Stanza como motor NLP")
+                else:
+                    hybrid_processor = HybridProcessor(nlp_engine="spacy")
+                    logger.info("Reconfigurando para usar spaCy como motor NLP")
+            
             processor_result = hybrid_processor.extract_domain_entities(request.text)
         elif request.processing_method == "llm_openrouter":
             # Determinar qual chave usar
@@ -99,6 +113,8 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
             )
         elif request.processing_method == "spacy_textacy":
             processor_result = spacy_textacy_processor.extract_domain_entities(request.text)
+        elif request.processing_method == "stanza":
+            processor_result = stanza_processor.extract_domain_entities(request.text)
         else:  # "llm" (default)
             processor_result = llm_processor.extract_domain_entities(request.text)
         

@@ -6,6 +6,8 @@ lxml==4.9.3
 spacy>=3.0.0
 textacy>=0.12.0
 python-dotenv==1.0.0
+stanza>=1.5.0
 # Para instalar o modelo em português: python -m spacy download pt_core_news_lg
 # Para instalar o modelo em inglês: python -m spacy download en_core_web_lg
 # NLTK removido - não é mais necessário para NLP alternativo
+# Para usar o Stanza: python -c "import stanza; stanza.download('pt')"

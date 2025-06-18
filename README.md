@@ -1,203 +1,251 @@
-# req2dom - Requisitos para Classes de Domínio
+# req2dom - Conversor de Requisitos para Classes de Domínio
 
-Esta ferramenta converte requisitos textuais em diagramas de classes de domínio, gerando automaticamente XML para visualização em draw.io. Ela utiliza diferentes métodos de processamento de linguagem natural e modelos de linguagem grande (LLM) para identificar entidades, atributos e relacionamentos.
+Esta ferramenta converte requisitos textuais em linguagem natural para diagramas de classes de domínio, gerando automaticamente XML compatível com draw.io. Utiliza diferentes métodos de processamento de linguagem natural e modelos de linguagem grande (LLM) para identificar entidades, atributos e relacionamentos nos requisitos.
 
-A ferramenta suporta múltiplos métodos de processamento:
+## Funcionalidades Principais
 
-- LLM Local (Llama) via Ollama
-- LLMs Externos (ChatGPT, Deepseek, Qwen, Google Gemini Pro)
-- Processamento NLP baseado em spaCy
-- Modo Híbrido (combinação de NLP e LLM)
-- NLP Avançado (spaCy + textacy)
+- **Múltiplos métodos de processamento:**
+  - LLM Local (Llama) via Ollama
+  - LLMs Externos via OpenRouter (ChatGPT, Claude, etc.)
+  - Processamento NLP baseado em spaCy e textacy
+  - Processamento NLP avançado baseado em Stanza (otimizado para português de Portugal)
+  - Modo Híbrido (combinação de NLP e LLM)
 
-Também suporta o reconhecimento de requisitos no formato "RF[número]. [texto do requisito]".
-
-## Visão Geral
-
-O req2dom é uma aplicação web que permite aos usuários:
-
-- Inserir requisitos textuais em linguagem natural
-- Processar estes requisitos utilizando diferentes métodos (LLM, NLP ou híbrido)
-- Gerar diagramas de classe no formato draw.io
-- Visualizar, editar e exportar os diagramas gerados
-
-![Exemplo de fluxo](https://i.imgur.com/example.png)
+- **Interface web intuitiva**
+- **Reconhecimento de requisitos no formato "RF[número]. [texto do requisito]"**
+- **Exportação em formato XML para draw.io**
+- **Visualização instantânea do diagrama gerado**
 
 ## Instalação e Execução
 
-### Backend (Python/FastAPI)
+### Pré-requisitos
 
-1. Acesse a pasta do backend:
-   ```bash
-   cd backend
-   ```
-2. Crie um ambiente virtual Python (recomendado):
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. Instale as dependências:
-   ```bash
-   pip install -r requirements.txt
-   pip install spacy textacy
-   python -m spacy download pt_core_news_lg  # Para português
-   # ou
-   python -m spacy download en_core_web_lg   # Para inglês
-   ```
-4. Configure as chaves de API no arquivo `.env` (veja exemplo em `.env.example`).
-5. Inicie o backend:
-   ```bash
-   uvicorn src.app:app --reload
-   ```
+- Python 3.8+
+- Node.js 14+
+- npm 6+
+- Git
 
-### Frontend (Vue.js)
+### Instalação Rápida (Recomendada)
 
-1. Abra um novo terminal e acesse a pasta do frontend:
-   ```bash
-   cd frontend
-   ```
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-3. Inicie o servidor de desenvolvimento:
-   ```bash
-   npm run serve
-   ```
+Após clonar o repositório, utilize o script de inicialização automática:
 
-A interface estará disponível em http://localhost:3000 e a API em http://localhost:8000/api
-
-## Configuração das Chaves de API
-
-Para utilizar LLMs externos via OpenRouter, configure a chave de API no arquivo `.env` dentro da pasta `backend`:
-
-1. Copie o arquivo de exemplo:
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
-2. Edite o arquivo `.env` e preencha a chave do OpenRouter:
-   ```
-   OPENROUTER_API_KEY=sua_chave_openrouter_aqui
-   ```
-
-O OpenRouter permite acesso a múltiplos modelos LLM (GPT-4, Claude, Llama, Gemini, etc.) através de uma única API.
-
-> ⚠️ **Importante**: Para utilizar o método "LLM Externo (OpenRouter)" na interface, é **obrigatório** configurar a chave API correspondente no arquivo `.env` ou fornecer uma chave temporária na interface. Se o botão "Processar com chave do servidor" não funcionar, verifique se o backend está lendo corretamente o arquivo `.env` (confira os logs do backend).
-
-> ⚠️ **Segurança**: O arquivo `.env` contém informações sensíveis e não deve ser compartilhado ou versionado. Ele já está incluído no `.gitignore` para evitar commits acidentais.
-
-## Métodos de Processamento
-
-A ferramenta oferece quatro métodos para analisar e extrair classes de domínio a partir de requisitos textuais:
-
-### 1. LLM Local (Llama)
-
-Usa exclusivamente o modelo Llama 3.1 8B local para analisar os requisitos. Este método:
-- Oferece excelente compreensão semântica e contextual do texto
-- Pode identificar entidades implícitas nos requisitos
-- Requer mais recursos computacionais
-- Funciona totalmente offline sem necessidade de API externa
-- Timeout estendido de 10 minutos para processamento de requisitos complexos
-- Ideal para requisitos complexos ou ambíguos
-
-### 2. LLM Externo (OpenRouter)
-
-Utiliza a API do OpenRouter para acesso a múltiplos LLMs na cloud. Este método:
-- Proporciona processamento de alta qualidade através do OpenRouter
-- Suporta múltiplos modelos:
-  - OpenAI (GPT-3.5, GPT-4)
-  - Anthropic (Claude 3 Haiku, Claude 3 Sonnet)
-  - Meta (Llama 3.1 8B, Llama 3.1 70B)
-  - Google (Gemma 2 9B)
-- Requer uma chave de API válida do OpenRouter
-- Oferece resultados consistentes e precisos
-- Ideal para requisitos complexos quando não há recursos locais suficientes
-
-### 3. NLP Avançado (spaCy + textacy)
-
-Combina o poder do spaCy com o textacy para uma análise linguística mais profunda. Este método:
-- Oferece extração avançada de entidades e relacionamentos
-- Usa modelos de linguagem treinados para maior precisão
-- Ideal para textos complexos que requerem uma compreensão mais sutil
-- Pode identificar padrões e entidades que outros métodos não conseguem
-- É mais rápido e usa menos recursos que os métodos baseados em LLM
-
-### 4. Híbrido (NLP + LLM)
-
-Combina as abordagens: usa NLP avançado para identificação inicial das entidades e o LLM para refinamento. Este método:
-- Oferece um bom equilíbrio entre velocidade e qualidade
-- Reduz a carga sobre o LLM ao fornecer estrutura inicial
-- Combina precisão gramatical do NLP com compreensão semântica do LLM
-- Recomendado para a maioria dos casos de uso
-
-## Uso
-
-1. Acesse a interface web em http://localhost:3000
-2. Insira os requisitos do sistema na área de texto
-3. Selecione o método de processamento desejado (LLM, NLP ou Híbrido)
-4. Opcionalmente, especifique o caminho para um modelo Llama local
-5. Clique em "Processar"
-6. Visualize o XML gerado ou use o botão "Abrir no draw.io" para editar o diagrama
-
-## Exemplos
-
-### Exemplo 1: Sistema de Biblioteca
-
-Requisitos de entrada:
-```
-A biblioteca deve permitir emprestar livros. Cada pessoa só pode ter 2 livros emprestados ao mesmo tempo.
-Livros têm título, autor e ISBN. Pessoas têm nome, endereço e número de identificação.
+```bash
+git clone https://github.com/seu-utilizador/req2dom.git
+cd req2dom
+chmod +x start_req2dom.sh
+./start_req2dom.sh
 ```
 
-Este exemplo gerará um diagrama com classes como `Livro`, `Pessoa` e `Biblioteca` com seus atributos e relacionamentos.
+O script irá:
+1. Verificar e instalar todas as dependências
+2. Criar o ambiente virtual Python
+3. Instalar os modelos necessários (spaCy e Stanza)
+4. Iniciar o backend e o frontend
 
-### Exemplo 2: Sistema de E-commerce
+A aplicação estará disponível em:
+- Frontend: http://localhost:5173
+- API: http://localhost:8000/api
 
-Requisitos de entrada:
+### Instalação Manual
+
+#### 1. Backend (Python/FastAPI)
+
+```bash
+cd req2dom/backend
+
+# Criar e ativar ambiente virtual
+python3 -m venv venv
+source venv/bin/activate
+
+# Instalar dependências
+pip install -r requirements.txt
+
+# Instalar modelos para spaCy
+python -m spacy download pt_core_news_lg
+python -m spacy download en_core_web_lg
+
+# Instalar e configurar Stanza (recomendado para português)
+./install_stanza.sh
+# ou manualmente:
+# pip install stanza
+# python -c "import stanza; stanza.download('pt')"
+
+# Configurar variáveis de ambiente (opcional)
+cp .env.example .env
+# Edite o ficheiro .env com as suas chaves API, se necessário
+
+# Iniciar o servidor
+uvicorn src.app:app --host 0.0.0.0 --port 8000 --reload
 ```
-O sistema de e-commerce deve permitir que clientes façam pedidos de produtos.
-Cada pedido contém um ou mais itens. Produtos têm nome, preço e categoria.
-Clientes possuem nome, email e endereço de entrega.
+
+#### 2. Frontend (Vue.js)
+
+```bash
+cd req2dom/frontend
+
+# Instalar dependências
+npm install
+
+# Iniciar servidor de desenvolvimento
+npm run dev
 ```
+
+## Utilização
+
+1. Aceda à interface web em [http://localhost:5173](http://localhost:5173)
+2. Insira os requisitos na área de texto
+3. Selecione o método de processamento desejado
+4. Clique em "Processar Requisitos"
+5. Visualize o diagrama gerado e descarregue o XML para uso no draw.io
+
+### Métodos de Processamento Disponíveis
+
+- **LLM Local**: Utiliza o modelo Llama 3.1 via Ollama para análise semântica completa
+- **LLM Externo**: Utilize modelos como ChatGPT, Claude, Gemini através do OpenRouter
+- **spaCy+textacy**: Processamento NLP tradicional com análise sintática e semântica
+- **Stanza**: Processamento NLP avançado com melhor suporte para português de Portugal
+- **Híbrido**: Combina NLP (Stanza por padrão) com LLM para resultados mais precisos
 
 ## Estrutura do Projeto
 
 ```
 req2dom/
-├── backend/           # API e lógica de processamento
-│   ├── requirements.txt
-│   └── src/
-│       ├── app.py     # Ponto de entrada da aplicação
-│       ├── api/
-│       │   └── routes.py  # Rotas da API
-│       └── model/
-│           ├── domain_generator.py   # Gerador de XML
-│           ├── llm_processor.py      # Processamento via LLM local
-│           ├── external_llm_processor.py  # Processamento via APIs externas (ChatGPT, Deepseek, Qwen, Gemini Pro)
-│           ├── hybrid_processor.py   # Processamento híbrido NLP+LLM
-│
-└── frontend/          # Interface web Vue.js
-    ├── index.html     # Página principal
-    ├── package.json   # Dependências
-    └── src/
-        ├── main.js    # Ponto de entrada
-        ├── App.vue    # Componente principal
-        ├── components/
-        │   ├── InputSection.vue  # Entrada de requisitos
-        │   └── OutputSection.vue # Saída e visualização
-        └── assets/
-            └── css/
-                └── style.css     # Estilos da aplicação
+├── backend/
+│   ├── src/
+│   │   ├── api/           # Rotas da API FastAPI
+│   │   ├── model/         # Processadores e geradores
+│   │   └── app.py         # Aplicação principal
+│   ├── install_stanza.sh  # Script de instalação do Stanza
+│   ├── requirements.txt   # Dependências Python
+│   └── test_*.py          # Testes e benchmarks
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # Componentes Vue
+│   │   ├── assets/        # Recursos estáticos
+│   │   └── App.vue        # Componente principal
+│   ├── index.html
+│   └── package.json
+└── start_req2dom.sh       # Script de inicialização
+
+Utiliza APIs externas de LLM. Este método:
+- Proporciona processamento de alta qualidade através de modelos de ponta
+- Suporta múltiplos fornecedores:
+  - OpenAI (GPT-3.5, GPT-4)
+  - Deepseek
+  - Qwen
+  - Google Gemini Pro
+- Requer uma chave de API válida do fornecedor escolhido
+- Oferece resultados consistentes e precisos
+
+### 3. NLP Avançado
+
+#### Stanza (Recomendado para português)
+- Processador avançado otimizado para português de Portugal
+- Melhor compreensão morfológica e sintática
+- Extração mais precisa de entidades e relacionamentos
+- Não necessita de API externa
+
+#### spaCy + textacy
+- Oferece extração avançada de entidades e relacionamentos
+- Usa modelos de linguagem treinados para maior precisão
+- Ideal para textos complexos que requerem uma compreensão mais sutil
+
+### 4. Híbrido (NLP + LLM)
+
+Combina as abordagens: usa NLP avançado para identificação inicial e o LLM para refinamento. Este método:
+- Oferece um bom equilíbrio entre velocidade e qualidade
+- Reduz a carga sobre o LLM ao fornecer estrutura inicial
+- Combina precisão gramatical do NLP com compreensão semântica do LLM
+- Método recomendado para a maioria dos casos
+
+## Utilização
+
+1. Aceda à interface web em http://localhost:5173
+2. Insira os requisitos do sistema na área de texto
+3. Selecione o método de processamento desejado
+4. Opcionalmente, especifique o motor NLP a utilizar (Stanza ou spaCy)
+5. Clique em "Processar"
+6. Visualize o diagrama gerado ou utilize o botão "Abrir no draw.io" para editar
+
+## Exemplos
+
+### Sistema de Gestão de Biblioteca
+
+```
+O sistema de biblioteca deve permitir que os utilizadores requisitem livros. 
+Cada livro tem um título, autor e código ISBN. 
+Os utilizadores devem ser registados no sistema com nome, email e endereço. 
+Um utilizador pode ter várias requisições ativas.
 ```
 
-## Tecnologias Utilizadas
+### Sistema de Gestão de Encomendas
 
-### Backend
+```
+RF01: O cliente deve poder registar-se no sistema fornecendo nome, email e telefone.
+RF02: O cliente pode adicionar produtos ao carrinho de compras.
+RF03: Os produtos têm nome, descrição, preço e quantidade em stock.
+RF04: O sistema deve permitir que o cliente finalize a compra gerando uma encomenda.
+RF05: Cada encomenda tem um código único, data, estado e valor total.
+```
+
+## Testes e Avaliação
+
+Para testar o processador Stanza:
+```bash
+cd backend
+python test_stanza.py
+```
+
+Para comparar o desempenho entre Stanza e spaCy:
+```bash
+cd backend
+python test_benchmark.py
+```
+
+## Testes
+
+O projeto inclui vários scripts de teste para validar o funcionamento dos processadores:
+
+```bash
+cd backend
+
+# Testar o processador Stanza
+python test_stanza.py
+
+# Comparar performance entre Stanza e spaCy
+python test_benchmark.py
+
+# Testes gerais
+python test_generic.py
+```
+
+## Configuração Avançada
+
+Para configurar chaves de API externa ou ajustar configurações, edite o ficheiro `.env` no diretório `backend`:
+
+```
+# API Key para OpenRouter (necessária para LLM externo)
+OPENROUTER_API_KEY=sua_chave_aqui
+
+# Configuração do idioma para processamento NLP
+LANGUAGE_MODEL=pt_core_news_lg
+
+# Configuração do modelo Llama local
+DEFAULT_LLAMA_MODEL=llama3.1:8b
+```
+
+## Contribuições
+
+Contribuições são bem-vindas! Por favor, envie pull requests para melhorias ou correções.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - consulte o ficheiro LICENSE para mais detalhes.
 - FastAPI: Framework web rápido para APIs
 - Ollama: Interface para modelos LLM locais
-- spaCy: Biblioteca de processamento de linguagem natural
-- Llama 3.1 8B: Modelo de linguagem grande
+- spaCy + textacy: Bibliotecas de processamento de linguagem natural
+- Stanza: Processamento de linguagem natural com foco em português
+- Llama 3.1 8B: Modelo de linguagem grande para processamento local
 
 ### Frontend
 - Vue.js: Framework JavaScript progressivo
@@ -205,14 +253,15 @@ req2dom/
 - fetch API: Para comunicação com o backend
 - embed.diagrams.net: Para visualização e edição de diagramas
 
-## Contribuição
+## Contribuir
 
-Contribuições são bem-vindas! Para contribuir:
+As contribuições são bem-vindas! Para contribuir:
 
-1. Faça um fork do repositório
-2. Crie um branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Faça commit de suas alterações (`git commit -m 'Adiciona nova funcionalidade'`)
-4. Faça push para o branch (`git push origin feature/nova-funcionalidade`)
+1. Faça fork do repositório
+2. Crie uma branch para a sua funcionalidade (`git checkout -b nova-funcionalidade`)
+3. Faça commit das suas alterações (`git commit -am 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin nova-funcionalidade`)
+5. Crie um novo Pull Request
 5. Abra um Pull Request
 
 ## Licença

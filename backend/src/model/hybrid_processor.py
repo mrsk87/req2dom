@@ -10,6 +10,9 @@ from typing import Dict, List, Any, Union
 
 # Importar o processador LLM para usar como parte do processamento híbrido
 from .llm_processor import LlamaProcessor
+# Importar Stanza para processamento avançado de português de Portugal
+from .stanza_processor import StanzaProcessor
+# Manter compatibilidade com o processador anterior
 from .spacy_textacy_processor import SpacyTextacyProcessor
 
 # Configurar logging
@@ -22,17 +25,24 @@ class HybridProcessor:
     extrair informações de requisitos para gerar classes de domínio
     """
     
-    def __init__(self, model_name="llama3.1:8b"):
+    def __init__(self, model_name="llama3.1:8b", nlp_engine="stanza"):
         """
         Inicializa o processador híbrido
         
         Args:
             model_name (str, optional): Nome do modelo LLM a utilizar como refinador
+            nlp_engine (str, optional): Engine NLP a utilizar ('stanza' ou 'spacy')
         """
         # Inicializar o processador LLM que será usado como refinador
         self.llm_processor = LlamaProcessor(model_name)
-        self.nlp_advanced = SpacyTextacyProcessor()
-        logger.info(f"HybridProcessor inicializado com LLM={model_name} e NLP avançado (spaCy+textacy)")
+        
+        # Usar o processador Stanza para português de Portugal como padrão
+        if nlp_engine == "stanza":
+            self.nlp_advanced = StanzaProcessor()
+            logger.info(f"HybridProcessor inicializado com LLM={model_name} e NLP avançado (Stanza para português de Portugal)")
+        else:
+            self.nlp_advanced = SpacyTextacyProcessor()
+            logger.info(f"HybridProcessor inicializado com LLM={model_name} e NLP avançado (spaCy+textacy)")
         
     def extract_domain_entities(self, requirements_text: str) -> Dict[str, Any]:
         """
