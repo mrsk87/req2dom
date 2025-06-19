@@ -29,10 +29,10 @@ class DomainGenerator:
     
     def _create_drawio_mxfile(self):
         """
-        Cria a estrutura base do arquivo mxfile para draw.io
-        
-        Returns:
-            Element: Elemento raiz mxfile
+        Cria a estrutura base do ficheiro mxfile para draw.io
+
+        Retorna:
+            tuple: Elemento raiz mxfile e nó root onde adicionar células
         """
         mxfile = ET.Element("mxfile")
         mxfile.set("host", "req2dom")
@@ -63,7 +63,7 @@ class DomainGenerator:
         
         root = ET.SubElement(mxGraphModel, "root")
         
-        # Adicionar célula padrão
+        # Adicionar células padrão
         cell0 = ET.SubElement(root, "mxCell")
         cell0.set("id", "0")
         
@@ -77,12 +77,12 @@ class DomainGenerator:
         """
         Cria elemento XML para uma classe no formato draw.io
         
-        Args:
+        Parâmetros:
             class_data (Dict): Dados da classe
             root: Elemento raiz XML onde adicionar a classe
         
-        Returns:
-            tuple: ID da classe e elemento XML da classe
+        Retorna:
+            tuple: ID da classe e nome da classe
         """
         try:
             class_id = f"class_{uuid.uuid4().hex[:8]}"
@@ -146,7 +146,7 @@ class DomainGenerator:
     
     def _create_relationships(self, classes_data, classes_ids, root):
         """
-        Cria elementos XML para os relacionamentos entre classes no formato draw.io
+        Cria elementos XML para os relacionamentos entre classes no formato draw.io.
         Garante que cada relacionamento está separado por entidade e com cardinalidade explícita.
         """
         try:
@@ -179,8 +179,6 @@ class DomainGenerator:
                         
                         # Determinar o estilo com base no tipo de relacionamento
                         style = "endArrow=none;html=1;rounded=0;"  # Associação padrão
-                        start_arrow = ""
-                        end_arrow = ""
                         
                         rel_type = rel["tipo"].lower()
                         if "herança" in rel_type or "extends" in rel_type:
@@ -209,11 +207,11 @@ class DomainGenerator:
                         edge_geo.set("relative", "1")
                         edge_geo.set("as", "geometry")
                         
-                        # Criar label para cardinalidade próximo à classe de origem (no início da linha)
+                        # Criar label para cardinalidade na origem
                         if source_card:
                             self._create_edge_label(root, source_card, rel_id, f"card_source_{rel_id}", -1)
                         
-                        # Criar label para cardinalidade próximo à classe de destino (no fim da linha)  
+                        # Criar label para cardinalidade no destino  
                         if target_card:
                             self._create_edge_label(root, target_card, rel_id, f"card_target_{rel_id}", 1)
                         
@@ -228,13 +226,13 @@ class DomainGenerator:
         """
         Extrai conteúdo JSON de um texto que pode conter outros elementos
         
-        Args:
+        Parâmetros:
             text (str): Texto que pode conter JSON
             
-        Returns:
+        Retorna:
             str: JSON extraído ou texto original se não conseguir extrair JSON
         """
-        logger.info("Tentando extrair JSON do texto de resposta")
+        logger.info("A tentar extrair JSON do texto de resposta")
         
         # Padrão 1: Conteúdo entre ```json e ```
         json_pattern1 = re.search(r'```(?:json)?\s*(.*?)```', text, re.DOTALL)
@@ -259,10 +257,10 @@ class DomainGenerator:
         """
         Tenta fazer o parse de uma string JSON de forma segura
         
-        Args:
+        Parâmetros:
             json_str (str): String JSON para parse
             
-        Returns:
+        Retorna:
             Dict ou None: Objeto JSON parseado ou None se falhar
         """
         try:
@@ -282,10 +280,10 @@ class DomainGenerator:
         """
         Divide a cardinalidade em duas partes (origem e destino)
         
-        Args:
+        Parâmetros:
             cardinality (str): Cardinalidade no formato "1..n", "1..1", "0..n", etc.
             
-        Returns:
+        Retorna:
             tuple: (cardinalidade_origem, cardinalidade_destino)
         """
         if ".." in cardinality:
@@ -297,9 +295,9 @@ class DomainGenerator:
     
     def _create_edge_label(self, root, text: str, edge_id: str, label_id: str, position: int):
         """
-        Cria um label de cardinalidade conectado à linha de relacionamento
+        Cria um label de cardinalidade ligado à linha de relacionamento
         
-        Args:
+        Parâmetros:
             root: Elemento raiz XML onde adicionar o label
             text (str): Texto da cardinalidade
             edge_id (str): ID da linha de relacionamento pai
@@ -312,7 +310,7 @@ class DomainGenerator:
         label.set("style", "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=12;fontColor=#666666;")
         label.set("vertex", "1")
         label.set("connectable", "0")
-        label.set("parent", edge_id)  # Conectado à linha de relacionamento
+        label.set("parent", edge_id)  # Ligado à linha de relacionamento
         
         # Geometria do label relativa à linha
         label_geo = ET.SubElement(label, "mxGeometry")
@@ -320,7 +318,7 @@ class DomainGenerator:
         label_geo.set("relative", "1")
         label_geo.set("as", "geometry")
         
-        # Adicionar offset para melhor posicionamento
+        # Offset para melhorar posicionamento
         label_offset = ET.SubElement(label_geo, "mxPoint")
         label_offset.set("x", "0")
         label_offset.set("y", "-10")  # Ligeiramente acima da linha
@@ -330,23 +328,21 @@ class DomainGenerator:
         """
         Gera XML no formato draw.io a partir dos dados de domínio
         
-        Args:
+        Parâmetros:
             domain_data_str (str): String JSON com dados do domínio
             
-        Returns:
+        Retorna:
             str: Documento XML formatado para draw.io
         """
-        logger.info(f"Iniciando geração de XML para draw.io a partir de string com {len(domain_data_str)} caracteres")
+        logger.info(f"Iniciando geração de XML para draw.io (entrada com {len(domain_data_str)} caracteres)")
         
         try:
             # Resetar posicionamento para cada nova geração
             self.next_y_position = 50
             self.class_positions = {}
             
-            # Garantir que temos JSON válido
+            # Extrair e validar JSON
             domain_data_str = self._extract_json_from_text(domain_data_str)
-            
-            # Parse JSON string para objeto Python
             domain_data = self._parse_json_safely(domain_data_str)
             
             if domain_data is None:
@@ -354,10 +350,10 @@ class DomainGenerator:
             
             logger.info("JSON parseado com sucesso")
             
-            # Validar estrutura mínima necessária
+            # Verificar lista de classes
             if "classes" not in domain_data or not isinstance(domain_data["classes"], list):
                 logger.error("JSON não contém a lista de 'classes' necessária")
-                return "<mxfile><diagram><mxGraphModel><root><mxCell value=\"Erro: O JSON fornecido não contém uma lista de classes válida\" vertex=\"1\"/></root></mxGraphModel></diagram></mxfile>"
+                return "<mxfile><diagram><mxGraphModel><root><mxCell value=\"Erro: JSON sem lista de classes válida\" vertex=\"1\"/></root></mxGraphModel></diagram></mxfile>"
             
             # Criar estrutura base do draw.io
             mxfile, root = self._create_drawio_mxfile()
@@ -380,11 +376,11 @@ class DomainGenerator:
             # Converter para string XML
             rough_xml = ET.tostring(mxfile, encoding='utf-8')
             
-            # Formatar XML de forma bonita
+            # Formatar XML de forma legível
             try:
                 dom = md.parseString(rough_xml)
                 pretty_xml = dom.toprettyxml(indent="  ")
-                logger.info("XML para draw.io gerado com sucesso")
+                logger.info("XML gerado com sucesso")
                 return pretty_xml
             except Exception as e:
                 logger.error(f"Erro ao formatar XML: {e}")

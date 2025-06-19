@@ -37,7 +37,7 @@ class OpenRouterProcessor:
         start_time = time.time()
         logger.info(f"Iniciando processamento OpenRouter de requisitos com {len(requirements_text)} caracteres")
         
-        # Usar chave do ambiente se não fornecida
+        # Usar chave do ambiente se não for fornecida
         if not api_key:
             api_key = os.getenv('OPENROUTER_API_KEY')
             logger.info("Usando chave de API do arquivo .env")

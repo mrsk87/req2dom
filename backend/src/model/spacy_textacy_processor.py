@@ -1,359 +1,325 @@
-"""
-Processador NLP avançado usando spaCy + textacy para extração de entidades, atributos e relacionamentos
-"""
-import logging
-import spacy
-import textacy.extract
-import re
-import json
-from typing import Dict, Any, List
+import logging  # Registo de eventos e erros
+import spacy    # Biblioteca principal de NLP
+import textacy.extract  # Extensões para extração de padrões em texto
+import re       # Expressões regulares para pré-processamento
+import json     # Manipulação de JSON para estrutura de saída
+from typing import Dict, Any, List  # Tipagem estática para documentação
 
+# Configurar o logger para o processador spaCy+textacy
 logger = logging.getLogger("spacy_textacy_processor")
 
 class SpacyTextacyProcessor:
-    def __init__(self, lang_model="pt_core_news_lg"):
+    """
+    Processador NLP avançado usando spaCy + textacy para
+    extração de entidades, atributos e relacionamentos de requisitos
+    """
+    
+    def __init__(self, lang_model: str = "pt_core_news_lg"):
+        """
+        Inicializa o modelo spaCy.
+        Tenta carregar o modelo em Português, senão faz fallback para Inglês.
+
+        Args:
+            lang_model (str): Nome do modelo spaCy a carregar (padrão: pt_core_news_lg)
+        """
         try:
+            # Carregar modelo específico para Português
             self.nlp = spacy.load(lang_model)
             logger.info(f"Modelo spaCy carregado: {lang_model}")
         except Exception:
+            # Caso falhe, usar modelo em inglês como fallback
             self.nlp = spacy.load("en_core_web_lg")
             logger.info("Modelo spaCy em inglês carregado como fallback")
 
     def extract_domain_entities(self, requirements_text: str) -> Dict[str, Any]:
         """
-        Extrai entidades de domínio usando spaCy e textacy
-        
+        Extrai entidades de domínio a partir do texto de requisitos.
+        Combina pré-processamento, extração de entidades principais,
+        atributos e relacionamentos.
+
         Args:
-            requirements_text (str): Texto com os requisitos
-            
+            requirements_text (str): Texto bruto com requisitos (pode incluir RFxx)
+
         Returns:
-            dict: Estrutura de dados com as entidades e seus relacionamentos
+            Dict[str, Any]: Dicionário com chave 'content' contendo JSON
         """
-        logger.info(f"Iniciando processamento spaCy+textacy de {len(requirements_text)} caracteres")
-        
+        logger.info(f"Iniciando processamento spaCy+textacy ({len(requirements_text)} caracteres)")
         try:
-            # Pré-processar requisitos RF
-            processed_text = self._preprocess_requirements(requirements_text)
-            doc = self.nlp(processed_text)
-            
-            # Dicionário de classes
-            classes = {}
-            
-            # 1. Extrair entidades principais (substantivos importantes)
+            # 1. Pré-processar texto para destacar requisitos RF
+            processed = self._preprocess_requirements(requirements_text)
+            # Converter texto em objeto spaCy
+            doc = self.nlp(processed)
+
+            # Estrutura temporária para classes descobertas
+            classes: Dict[str, Any] = {}
+
+            # 2. Extrair entidades principais (substantivos relevantes)
             main_entities = self._extract_main_entities(doc)
-            
-            # 2. Para cada entidade, criar classe e extrair atributos
-            for entity in main_entities:
-                class_name = entity.capitalize()
+
+            # 3. Para cada entidade principal, definir classe e atributos
+            for ent in main_entities:
+                class_name = ent.capitalize()
+                # Inicializar estrutura de classe se não existir
                 if class_name not in classes:
                     classes[class_name] = {
                         "nome": class_name,
                         "atributos": [],
                         "relacionamentos": []
                     }
-                
-                # Extrair atributos baseados no contexto da entidade
-                attributes = self._extract_attributes_for_entity(entity, doc)
-                classes[class_name]["atributos"].extend(attributes)
-            
-            # 3. Extrair relacionamentos usando análise sintática
-            relationships = self._extract_relationships(doc, classes.keys())
-            for rel in relationships:
-                source_class = rel["source"]
-                if source_class in classes:
-                    classes[source_class]["relacionamentos"].append({
+                # Extrair atributos específicos da entidade
+                attrs = self._extract_attributes_for_entity(ent, doc)
+                classes[class_name]["atributos"].extend(attrs)
+
+            # 4. Extrair relacionamentos sintáticos entre entidades
+            rels = self._extract_relationships(doc, classes.keys())
+            for rel in rels:
+                src = rel["source"]
+                # Adicionar relacionamento à classe de origem
+                if src in classes:
+                    classes[src]["relacionamentos"].append({
                         "tipo": rel["tipo"],
                         "alvo": rel["target"],
                         "cardinalidade": rel["cardinalidade"]
                     })
-            
-            # 4. Remover duplicatas e limpar dados
-            for class_name in classes:
-                # Remover atributos duplicados
-                seen_attrs = set()
+
+            # 5. Eliminar duplicados em atributos e relacionamentos
+            for cls in classes.values():
+                # Atributos únicos
+                seen = set()
                 unique_attrs = []
-                for attr in classes[class_name]["atributos"]:
-                    attr_key = (attr["nome"], attr["tipo"])
-                    if attr_key not in seen_attrs:
-                        seen_attrs.add(attr_key)
-                        unique_attrs.append(attr)
-                classes[class_name]["atributos"] = unique_attrs
-                
-                # Remover relacionamentos duplicados
-                seen_rels = set()
+                for a in cls["atributos"]:
+                    key = (a["nome"], a["tipo"])
+                    if key not in seen:
+                        seen.add(key)
+                        unique_attrs.append(a)
+                cls["atributos"] = unique_attrs
+                # Relacionamentos únicos
+                seen_rel = set()
                 unique_rels = []
-                for rel in classes[class_name]["relacionamentos"]:
-                    rel_key = (rel["tipo"], rel["alvo"], rel["cardinalidade"])
-                    if rel_key not in seen_rels:
-                        seen_rels.add(rel_key)
-                        unique_rels.append(rel)
-                classes[class_name]["relacionamentos"] = unique_rels
-            
+                for r in cls["relacionamentos"]:
+                    key = (r["tipo"], r["alvo"], r["cardinalidade"])
+                    if key not in seen_rel:
+                        seen_rel.add(key)
+                        unique_rels.append(r)
+                cls["relacionamentos"] = unique_rels
+
+            # 6. Construir resultado final e converter para JSON formatado
             result = {"classes": list(classes.values())}
-            logger.info(f"Processamento concluído: {len(classes)} classes extraídas")
+            logger.info(f"Processamento concluído: {len(result['classes'])} classes extraídas")
             return {"content": json.dumps(result, ensure_ascii=False, indent=2)}
-            
+
         except Exception as e:
-            error_msg = f"Erro no processamento spaCy+textacy: {str(e)}"
-            logger.error(error_msg)
-            return {"error": error_msg}
-    
+            # Em caso de erro, registar e retornar mensagem
+            msg = f"Erro no processamento spaCy+textacy: {e}"
+            logger.error(msg)
+            return {"error": msg}
+
     def _preprocess_requirements(self, text: str) -> str:
-        """Pré-processa requisitos que começam com RF[número]"""
-        import re
-        
-        # Procurar padrões no formato "RFxx. Texto do requisito"
+        """
+        Pré-processa texto de requisitos para substituir blocos RFxx
+        por linhas mais legíveis para análise.
+
+        Args:
+            text (str): Texto original de requisitos
+
+        Returns:
+            str: Texto reformulado (ou original se sem padrões RF)
+        """
         pattern = r"RF\d+\.\s*(.*?)(?=RF\d+\.|$)"
         matches = re.findall(pattern, text, re.DOTALL)
-        
         if matches:
-            processed_text = ""
-            rf_numbers = re.findall(r"RF(\d+)", text)
-            
-            for i, (req_text, rf_num) in enumerate(zip(matches, rf_numbers)):
-                processed_text += f"Requisito {rf_num}: {req_text.strip()}\n\n"
-            
-            return processed_text.strip()
-        
+            # Numerar requisitos de forma legível
+            nums = re.findall(r"RF(\d+)", text)
+            out = []
+            for txt, num in zip(matches, nums):
+                out.append(f"Requisito {num}: {txt.strip()}")
+            return "\n\n".join(out)
         return text
-    
+
     def _extract_main_entities(self, doc) -> List[str]:
-        """Extrai entidades principais do texto"""
+        """
+        Identifica substantivos e entidades nomeadas relevantes
+        para formar classes de domínio.
+
+        Args:
+            doc: Objeto spaCy
+
+        Returns:
+            List[str]: Lista de entidades em minúsculas
+        """
         entities = set()
-        
-        # Palavras-chave comuns em sistemas de negócio
+        # Conjunto de palavras-chave do domínio
         domain_keywords = {
-            'cliente', 'usuario', 'pessoa', 'funcionario', 'admin', 'sistema', 
-            'servico', 'produto', 'item', 'pedido', 'venda', 'compra',
-            'agenda', 'marcacao', 'evento', 'tarefa', 'atividade', 'processo',
-            'documento', 'relatorio', 'registro', 'categoria', 'tipo',
-            'endereco', 'contato', 'telefone', 'email', 'dados',
-            'pagamento', 'valor', 'preco', 'custo', 'quantidade',
-            'data', 'hora', 'periodo', 'prazo', 'status', 'estado'
+            'cliente', 'usuario', 'pessoa', 'funcionario', 'sistema', 'servico',
+            'produto', 'pedido', 'venda', 'compra', 'agenda', 'evento', 'tarefa',
+            'documento', 'relatorio', 'categoria', 'endereco', 'contato',
+            'telefone', 'email', 'pagamento', 'preco', 'quantidade', 'data'
         }
-        
-        # Extrair substantivos relevantes
+        # Extrair tokens substantivos e nomes próprios
         for token in doc:
-            if (token.pos_ in ["NOUN", "PROPN"] and 
-                len(token.text) > 2 and 
-                not token.is_stop and 
-                not token.is_punct):
-                
+            if token.pos_ in ["NOUN", "PROPN"] and not token.is_stop and not token.is_punct:
                 lemma = token.lemma_.lower()
-                # Priorizar palavras do domínio ou substantivos frequentes
                 if lemma in domain_keywords or token.pos_ == "PROPN":
                     entities.add(lemma)
-        
-        # Extrair entidades nomeadas
+        # Extrair entidades nomeadas (PERSON, ORG, PRODUCT)
         for ent in doc.ents:
             if ent.label_ in ["PERSON", "ORG", "PRODUCT"]:
                 entities.add(ent.text.lower())
-        
         return list(entities)
-    
+
     def _extract_attributes_for_entity(self, entity: str, doc) -> List[Dict[str, str]]:
-        """Extrai atributos para uma entidade específica de forma genérica"""
-        attributes = []
-        entity_lower = entity.lower()
-        
-        # Atributos básicos universais para qualquer entidade
-        basic_attributes = [
+        """
+        Define atributos padrão e específicos conforme o nome da entidade.
+        Se não houver padrão, tenta inferir do contexto.
+
+        Args:
+            entity (str): Nome da entidade
+            doc: Objeto spaCy
+
+        Returns:
+            List[Dict[str,str]]: Lista de atributos com 'nome' e 'tipo'
+        """
+        ent_low = entity.lower()
+        # Atributos básicos comuns
+        basic = [
             {"nome": "id", "tipo": "Integer"},
             {"nome": "nome", "tipo": "String"}
         ]
-        
-        # Atributos específicos baseados em padrões de nomenclatura
-        if any(word in entity_lower for word in ['pessoa', 'cliente', 'usuario', 'utilizador', 'admin', 'secretaria', 'funcionario', 'veterinario']):
-            # Entidades que representam pessoas
-            attributes = [
+        # Padrões específicos conforme tipo de entidade
+        if any(w in ent_low for w in ['pessoa', 'cliente', 'usuario']):
+            return [
                 {"nome": "id", "tipo": "Integer"},
                 {"nome": "nome", "tipo": "String"},
                 {"nome": "email", "tipo": "String"},
                 {"nome": "telefone", "tipo": "String"},
                 {"nome": "endereco", "tipo": "String"}
             ]
-        elif any(word in entity_lower for word in ['consulta', 'marcacao', 'agendamento', 'appointment']):
-            # Entidades de agendamento/consulta
-            attributes = [
+        elif any(w in ent_low for w in ['consulta', 'marcacao', 'agendamento']):
+            return [
                 {"nome": "id", "tipo": "Integer"},
                 {"nome": "dataHora", "tipo": "DateTime"},
                 {"nome": "observacoes", "tipo": "String"},
                 {"nome": "estado", "tipo": "String"}
             ]
-        elif any(word in entity_lower for word in ['servico', 'service', 'produto', 'item']):
-            # Entidades de serviço/produto
-            attributes = [
+        elif any(w in ent_low for w in ['servico', 'produto']):
+            return [
                 {"nome": "id", "tipo": "Integer"},
                 {"nome": "nome", "tipo": "String"},
                 {"nome": "descricao", "tipo": "String"},
                 {"nome": "preco", "tipo": "Double"},
                 {"nome": "tipo", "tipo": "String"}
             ]
-        elif any(word in entity_lower for word in ['agenda', 'horario', 'schedule']):
-            # Entidades de agenda/horário
-            attributes = [
-                {"nome": "id", "tipo": "Integer"},
-                {"nome": "dataInicio", "tipo": "DateTime"},
-                {"nome": "dataFim", "tipo": "DateTime"},
-                {"nome": "disponivel", "tipo": "Boolean"}
-            ]
-        elif any(word in entity_lower for word in ['tipo', 'categoria', 'class']):
-            # Entidades de classificação
-            attributes = [
-                {"nome": "id", "tipo": "Integer"},
-                {"nome": "nome", "tipo": "String"},
-                {"nome": "descricao", "tipo": "String"},
-                {"nome": "ativo", "tipo": "Boolean"}
-            ]
         else:
-            # Entidades genéricas - tentar inferir do contexto
-            context_attributes = self._infer_attributes_from_context(entity, doc)
-            if context_attributes:
-                attributes = basic_attributes + context_attributes
-            else:
-                attributes = basic_attributes + [{"nome": "descricao", "tipo": "String"}]
-        
-        return attributes
-    
+            # Tentar inferir atributos do contexto ou usar básicos + 'descricao'
+            ctx_attrs = self._infer_attributes_from_context(entity, doc)
+            return basic + (ctx_attrs if ctx_attrs else [{"nome": "descricao", "tipo": "String"}])
+
     def _infer_attributes_from_context(self, entity: str, doc) -> List[Dict[str, str]]:
-        """Infere atributos baseado no contexto do texto"""
-        attributes = []
-        
-        # Procurar por palavras-chave no contexto que indiquem atributos
-        context_keywords = {
-            'nome': 'String',
-            'email': 'String', 
-            'telefone': 'String',
-            'endereco': 'String',
-            'data': 'Date',
-            'hora': 'Time',
-            'preco': 'Double',
-            'valor': 'Double',
-            'quantidade': 'Integer',
-            'numero': 'Integer',
-            'codigo': 'String',
-            'tipo': 'String',
-            'categoria': 'String',
-            'estado': 'String',
-            'status': 'String',
-            'descricao': 'String',
-            'observacoes': 'String',
-            'comentarios': 'String'
+        """
+        Procura palavras-chave no texto que indiquem atributos adicionais.
+
+        Args:
+            entity (str): Nome da entidade
+            doc: Objeto spaCy
+
+        Returns:
+            List[Dict[str,str]]: Atributos inferidos com base no contexto
+        """
+        attrs = []
+        keywords = {
+            'nome': 'String', 'email': 'String', 'telefone': 'String',
+            'data': 'Date', 'hora': 'Time', 'preco': 'Double',
+            'quantidade': 'Integer', 'status': 'String', 'descricao': 'String'
         }
-        
-        # Analisar o texto em busca de padrões
         for token in doc:
-            if token.text.lower() in context_keywords:
-                attr_name = token.text.lower()
-                attr_type = context_keywords[attr_name]
-                if {"nome": attr_name, "tipo": attr_type} not in attributes:
-                    attributes.append({"nome": attr_name, "tipo": attr_type})
-        
-        return attributes
-    
+            low = token.text.lower()
+            if low in keywords and {"nome": low, "tipo": keywords[low]} not in attrs:
+                attrs.append({"nome": low, "tipo": keywords[low]})
+        return attrs
+
     def _extract_relationships(self, doc, entity_names) -> List[Dict[str, str]]:
-        """Extrai relacionamentos entre entidades de forma genérica"""
-        relationships = []
-        entity_names_list = list(entity_names)
-        
-        # Analisar dependências sintáticas para encontrar relacionamentos
+        """
+        Identifica relacionamentos genéricos entre entidades via análise sintática
+        e heurísticas padrão.
+        """
+        relationships: List[Dict[str,str]] = []
+        names = list(entity_names)
+        # Percorrer cada frase para padrões de sujeito/objeto
         for sent in doc.sents:
             for token in sent:
-                # Procurar por padrões que indiquem relacionamentos
                 if token.dep_ in ["nsubj", "dobj", "pobj"] and token.head.pos_ == "VERB":
-                    # Encontrar entidades relacionadas através de verbos
-                    subject_entities = []
-                    object_entities = []
-                    
-                    # Procurar entidades na frase
-                    for ent_name in entity_names_list:
-                        if ent_name.lower() in sent.text.lower():
+                    subj_ents = []
+                    obj_ents = []
+                    # Verificar ocorrências de entidades na frase
+                    for name in names:
+                        if name.lower() in sent.text.lower():
                             if token.dep_ == "nsubj":
-                                subject_entities.append(ent_name.capitalize())
-                            elif token.dep_ in ["dobj", "pobj"]:
-                                object_entities.append(ent_name.capitalize())
-                    
-                    # Criar relacionamentos baseados nos padrões encontrados
-                    for subj in subject_entities:
-                        for obj in object_entities:
-                            if subj != obj:
-                                rel_type = self._determine_relationship_type(token.head.lemma_, subj, obj)
-                                cardinalidade = self._determine_cardinality(sent.text, subj, obj)
-                                
+                                subj_ents.append(name.capitalize())
+                            else:
+                                obj_ents.append(name.capitalize())
+                    # Construir relacionamentos entre cada par encontrado
+                    for s in subj_ents:
+                        for o in obj_ents:
+                            if s != o:
+                                rel_type = self._determine_relationship_type(token.head.lemma_, s, o)
+                                card = self._determine_cardinality(sent.text, s, o)
                                 relationships.append({
-                                    "source": subj,
-                                    "target": obj,
+                                    "source": s,
+                                    "target": o,
                                     "tipo": rel_type,
-                                    "cardinalidade": cardinalidade
+                                    "cardinalidade": card
                                 })
-        
-        # Adicionar relacionamentos padrão baseados em nomes de entidades
-        for i, entity1 in enumerate(entity_names_list):
-            for entity2 in entity_names_list[i+1:]:
-                if self._entities_likely_related(entity1, entity2):
-                    rel_type, cardinalidade = self._get_default_relationship(entity1, entity2)
-                    relationships.append({
-                        "source": entity1.capitalize(),
-                        "target": entity2.capitalize(),
-                        "tipo": rel_type,
-                        "cardinalidade": cardinalidade
-                    })
-        
+        # Adicionar relacionamentos padrão se não detectados sintaticamente
+        for i, e1 in enumerate(names):
+            for e2 in names[i+1:]:
+                if self._entities_likely_related(e1, e2):
+                    t, c = self._get_default_relationship(e1, e2)
+                    relationships.append({"source": e1.capitalize(), "target": e2.capitalize(), "tipo": t, "cardinalidade": c})
         return relationships
-    
+
     def _determine_relationship_type(self, verb: str, source: str, target: str) -> str:
-        """Determina o tipo de relacionamento baseado no verbo"""
-        verb_lower = verb.lower()
-        
-        if verb_lower in ['ter', 'possuir', 'conter', 'incluir', 'have', 'contain', 'include']:
+        """
+        Determina tipo de relacionamento com base no verbo principal.
+        """
+        v = verb.lower()
+        if v in ['ter', 'possuir', 'conter', 'incluir']:
             return "composicao"
-        elif verb_lower in ['usar', 'utilizar', 'referenciar', 'associar', 'use', 'reference', 'associate']:
+        elif v in ['usar', 'referenciar', 'associar']:
             return "associacao"
-        elif verb_lower in ['herdar', 'estender', 'implementar', 'inherit', 'extend', 'implement']:
+        elif v in ['herdar', 'estender', 'implementar']:
             return "heranca"
-        else:
-            return "associacao"  # padrão
-    
+        return "associacao"  # padrão
+
     def _determine_cardinality(self, sentence: str, source: str, target: str) -> str:
-        """Determina a cardinalidade baseada no contexto da frase"""
-        sentence_lower = sentence.lower()
-        
-        if any(word in sentence_lower for word in ['varios', 'muitos', 'multiplos', 'many', 'multiple', 'several']):
+        """
+        Define cardinalidade com base em palavras-chave no contexto da frase.
+        """
+        s = sentence.lower()
+        if any(w in s for w in ['varios', 'muitos', 'multiplos']):
             return "1..n"
-        elif any(word in sentence_lower for word in ['um', 'uma', 'one', 'single']):
+        if any(w in s for w in ['um', 'uma', 'one']):
             return "1..1"
-        elif any(word in sentence_lower for word in ['opcional', 'pode', 'optional', 'may', 'might']):
+        if any(w in s for w in ['opcional', 'pode', 'may']):
             return "0..1"
-        else:
-            return "1..n"  # padrão para flexibilidade
-    
+        return "1..n"
+
     def _entities_likely_related(self, entity1: str, entity2: str) -> bool:
-        """Verifica se duas entidades provavelmente têm relacionamento"""
-        # Entidades de pessoas geralmente se relacionam com outras entidades
-        person_entities = ['admin', 'secretaria', 'cliente', 'usuario', 'funcionario', 'veterinario']
-        
-        entity1_lower = entity1.lower()
-        entity2_lower = entity2.lower()
-        
-        # Se uma é pessoa e outra não, provavelmente há relacionamento
-        entity1_is_person = any(word in entity1_lower for word in person_entities)
-        entity2_is_person = any(word in entity2_lower for word in person_entities)
-        
-        return entity1_is_person != entity2_is_person
-    
-    def _get_default_relationship(self, entity1: str, entity2: str) -> tuple:
-        """Retorna tipo de relacionamento e cardinalidade padrão"""
-        person_entities = ['admin', 'secretaria', 'cliente', 'usuario', 'funcionario', 'veterinario']
-        
-        entity1_lower = entity1.lower()
-        entity2_lower = entity2.lower()
-        
-        entity1_is_person = any(word in entity1_lower for word in person_entities)
-        entity2_is_person = any(word in entity2_lower for word in person_entities)
-        
-        if entity1_is_person and not entity2_is_person:
+        """
+        Heurística simples: se uma entidade for do tipo pessoa e outra não,
+        assume que se relacionam.
+        """
+        people = ['admin', 'cliente', 'usuario', 'funcionario']
+        e1 = entity1.lower()
+        e2 = entity2.lower()
+        p1 = any(w in e1 for w in people)
+        p2 = any(w in e2 for w in people)
+        return p1 != p2
+
+    def _get_default_relationship(self, entity1: str, entity2: str) -> Any:
+        """
+        Retorna relacionamento padrão (associação) e cardinalidade.
+        """
+        # Se um for pessoa e outro não, associação 1..n, senão 0..n
+        if self._entities_likely_related(entity1, entity2):
             return "associacao", "1..n"
-        elif not entity1_is_person and entity2_is_person:
-            return "associacao", "1..n"
-        else:
-            return "associacao", "0..n"
+        return "associacao", "0..n"

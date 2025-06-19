@@ -85,7 +85,7 @@ class ExternalLLMProcessor:
         pattern = r"RF\d+\.\s*(.*?)(?=RF\d+\.|$)"
         matches = re.findall(pattern, requirements_text, re.DOTALL)
         
-        # Se encontrou padrões RF, reformatar
+        # Se encontrar padrões RF, formata o texto
         if matches:
             processed_text = ""
             rf_numbers = re.findall(r"RF(\d+)", requirements_text)
@@ -95,7 +95,7 @@ class ExternalLLMProcessor:
             
             return processed_text.strip()
         
-        # Se não encontrou padrões RF, retornar o texto original
+        # Se não encontrar padrões RF, retorna o texto original
         return requirements_text
     
     def _process_with_openai(self, requirements_text: str) -> Dict[str, Any]:

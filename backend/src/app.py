@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from .api.routes import router
 
-# Configurar logging para console e arquivo
+# Configurar logging para arquivo e consola
 log_path = Path(__file__).resolve().parent.parent.parent / "backend.log"
 logging.basicConfig(
     level=logging.INFO,
@@ -54,7 +54,7 @@ app = FastAPI(
 # Configurar CORS para permitir acesso do frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, restrinja a origens específicas
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
