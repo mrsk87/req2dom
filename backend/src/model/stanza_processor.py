@@ -21,7 +21,7 @@ class StanzaProcessor:
         try:
             # Verificar se o modelo já foi baixado
             if not os.path.exists(os.path.expanduser('~/stanza_resources/pt')):
-                logger.info("Baixando modelo em português para Stanza...")
+                logger.info("Download modelo em português para Stanza...")
                 stanza.download('pt', verbose=False)
                 
             # Inicializar o pipeline para português sem NER (não disponível para PT)

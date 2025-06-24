@@ -62,6 +62,12 @@ class ExternalLLMProcessor:
         start_time = time.time()
         logger.info(f"A iniciar processamento com {self.provider}/{self.model}, requisitos com {len(requirements_text)} caracteres")
         
+        # VERIFICAÇÃO CRÍTICA: Evitar chamadas sem chave de API válida
+        if not self.api_key and not self.env_api_keys.get(self.provider):
+            error_msg = f"AVISO: Processador {self.provider} não configurado. Chave de API não encontrada."
+            logger.warning(error_msg)
+            return {"error": error_msg}
+        
         # Carregar chaves de API mais recentes do ambiente (para evitar problemas de cache)
         current_env_keys = {
             "openai": os.getenv("OPENAI_API_KEY"),
@@ -182,7 +188,7 @@ class ExternalLLMProcessor:
                 "Authorization": f"Bearer {self.api_key}"
             }
             
-            logger.info(f"A enviar pedido para OpenAI: modelo={self.model}")
+            logger.info(f"A enviar pedido para OpenAI: modelo={self.model}, url={self.openai_api_url}")
             
             # Enviar pedido para a API do OpenAI
             response = requests.post(
@@ -194,7 +200,11 @@ class ExternalLLMProcessor:
             
             logger.info(f"Resposta recebida do OpenAI: estado={response.status_code}, tempo={time.time()-start_time:.2f}s")
             
-            if response.status_code != 200:
+            if response.status_code == 404:
+                error_msg = f"Erro 404 - Endpoint não encontrado para OpenAI gpt-3.5-turbo. URL: {self.openai_api_url}"
+                logger.error(error_msg)
+                return {"error": error_msg}
+            elif response.status_code != 200:
                 error_msg = f"Erro na API OpenAI: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 return {"error": error_msg}

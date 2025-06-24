@@ -19,8 +19,39 @@ class OpenRouterProcessor:
     def __init__(self):
         """Inicializa o processador OpenRouter"""
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.default_model = "openai/gpt-3.5-turbo"
+        self.default_model = "anthropic/claude-3-haiku"  # Modelo rápido e eficiente
+        
+        # Outros modelos recomendados:
+        self.recommended_models = {
+            "free": "meta-llama/llama-3.1-8b-instruct:free",
+            "fast": "anthropic/claude-3-haiku",
+            "powerful": "openai/gpt-4o-mini",
+            "advanced": "anthropic/claude-3-sonnet",
+            "coding": "microsoft/wizardlm-2-8x22b"
+        }
+        
         logger.info("OpenRouterProcessor inicializado")
+    
+    def set_model(self, model_key: str = None, custom_model: str = None):
+        """
+        Define o modelo a ser usado
+        
+        Args:
+            model_key (str): Chave do modelo recomendado ('free', 'fast', 'powerful', etc.)
+            custom_model (str): Nome personalizado do modelo
+        """
+        if custom_model:
+            self.default_model = custom_model
+            logger.info(f"Modelo personalizado definido: {custom_model}")
+        elif model_key and model_key in self.recommended_models:
+            self.default_model = self.recommended_models[model_key]
+            logger.info(f"Modelo definido via chave '{model_key}': {self.default_model}")
+        else:
+            logger.warning(f"Chave de modelo '{model_key}' não reconhecida. Modelos disponíveis: {list(self.recommended_models.keys())}")
+        
+    def get_available_models(self):
+        """Retorna os modelos recomendados disponíveis"""
+        return self.recommended_models
         
     def extract_domain_entities(self, requirements_text: str, api_key: str = None, model: str = None) -> Dict[str, Any]:
         """
