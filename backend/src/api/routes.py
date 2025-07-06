@@ -24,7 +24,7 @@ router = APIRouter()
 # Inicializar componentes
 llm_processor = LlamaProcessor()
 # Usar o Stanza como processador NLP padrão para português de Portugal
-hybrid_processor = HybridProcessor(nlp_engine="stanza")
+hybrid_processor = HybridProcessor()
 domain_generator = DomainGenerator()
 openrouter_processor = OpenRouterProcessor()
 spacy_textacy_processor = SpacyTextacyProcessor()
@@ -86,16 +86,7 @@ async def process_requirements(request: RequirementsRequest) -> Dict[str, Any]:
         
         # Extrair entidades de domínio usando o método selecionado
         if request.processing_method == "hybrid":
-            # Se especificado, usar o motor NLP solicitado
-            if hasattr(request, 'nlp_engine') and request.nlp_engine != hybrid_processor.nlp_advanced.__class__.__name__.lower().replace('processor', ''):
-                # Reconstruir o processador híbrido com o motor correto
-                if request.nlp_engine == "stanza":
-                    hybrid_processor = HybridProcessor(nlp_engine="stanza")
-                    logger.info("Reconfigurando para usar Stanza como motor NLP")
-                else:
-                    hybrid_processor = HybridProcessor(nlp_engine="spacy")
-                    logger.info("Reconfigurando para usar spaCy como motor NLP")
-            
+            # O processador híbrido usa Stanza (NLP) + Llama (LLM) por padrão
             processor_result = hybrid_processor.extract_domain_entities(request.text)
         elif request.processing_method == "llm_openrouter":
             # Determinar qual chave usar
