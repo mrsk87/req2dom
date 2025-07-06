@@ -152,20 +152,73 @@ Utiliza APIs externas de LLM. Este método:
 
 ### 4. Híbrido (NLP + LLM)
 
-Combina as abordagens: usa NLP avançado para identificação inicial e o LLM para refinamento. Este método:
-- Oferece um bom equilíbrio entre velocidade e qualidade
-- Reduz a carga sobre o LLM ao fornecer estrutura inicial
-- Combina precisão gramatical do NLP com compreensão semântica do LLM
-- Método recomendado para a maioria dos casos
+# Criar o ambiente virtual
+python3 -m venv venv
+
+# Ativar o ambiente virtual
+source venv/bin/activate  # No Linux/Mac
+# ou
+# venv\Scripts\activate   # No Windows
+```
+
+### 2. Instalar as dependências do backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### 3. Assegurar que o Ollama está instalado e configurado
+
+```bash
+# Verificar modelos disponíveis
+ollama list
+
+# Se o modelo llama3.1:8b não estiver instalado, instale-o
+# (Isto pode demorar alguns minutos dependendo da sua conexão)
+ollama pull llama3.1:8b
+```
+
+## Execução do Projeto
+
+### 1. Iniciar o modelo Ollama
+
+Num terminal:
+
+```bash
+ollama run llama3.1:8b
+```
+
+### 2. Iniciar o servidor backend
+
+Noutro terminal:
+
+```bash
+# Ativar o ambiente virtual (se ainda não estiver ativado)
+cd req2dom
+source venv/bin/activate  # No Linux/Mac
+# ou
+# venv\Scripts\activate   # No Windows
+
+# Iniciar o servidor backend
+cd backend
+uvicorn src.app:app --reload
+```
+
+O servidor estará disponível em [http://localhost:8000](http://localhost:8000).
+
+### 3. Aceder à aplicação
+
+Agora aceder á aplicação em [http://localhost:8000](http://localhost:8000).
 
 ## Utilização
 
-1. Aceda à interface web em http://localhost:5173
-2. Insira os requisitos do sistema na área de texto
-3. Selecione o método de processamento desejado
-4. Opcionalmente, especifique o motor NLP a utilizar (Stanza ou spaCy)
-5. Clique em "Processar"
-6. Visualize o diagrama gerado ou utilize o botão "Abrir no draw.io" para editar
+1. Na interface do utilizador, introduza os requisitos do sistema na área de texto à esquerda.
+2. Clique no botão "Processar".
+3. Aguarde enquanto o sistema processa os requisitos (isto pode demorar alguns segundos).
+4. O XML das classes de domínio gerado será exibido na área de texto à direita.
+5. Pode copiar o XML para a área de transferência ou guardá-lo como ficheiro.
+6. Importe o ficheiro XML para o DrawIO ou outra ferramenta de modelagem compatível.
 
 ## Exemplos
 
@@ -240,75 +293,4 @@ Contribuições são bem-vindas! Por favor, envie pull requests para melhorias o
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - consulte o ficheiro LICENSE para mais detalhes.
-- FastAPI: Framework web rápido para APIs
-- Ollama: Interface para modelos LLM locais
-- spaCy + textacy: Bibliotecas de processamento de linguagem natural
-- Stanza: Processamento de linguagem natural com foco em português
-- Llama 3.1 8B: Modelo de linguagem grande para processamento local
-
-### Frontend
-- Vue.js: Framework JavaScript progressivo
-- Vite: Ferramenta de build e desenvolvimento
-- fetch API: Para comunicação com o backend
-- embed.diagrams.net: Para visualização e edição de diagramas
-
-## Contribuir
-
-As contribuições são bem-vindas! Para contribuir:
-
-1. Faça fork do repositório
-2. Crie uma branch para a sua funcionalidade (`git checkout -b nova-funcionalidade`)
-3. Faça commit das suas alterações (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin nova-funcionalidade`)
-5. Crie um novo Pull Request
-5. Abra um Pull Request
-
-## Licença
-
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
-
-## Contato
-
-Para dúvidas ou sugestões, entre em contato com a equipe de desenvolvimento.
-
-## Inicializando manualmente
-
-### Backend
-
-Para iniciar o backend manualmente:
-
-1. Navegue até a pasta backend:
-   ```bash
-   cd backend
-   ```
-
-2. Ative o ambiente virtual. Importante: O ambiente virtual deve estar na pasta `backend/venv`:
-   ```bash
-   source venv/bin/activate  # No Linux/macOS
-   # ou
-   venv\Scripts\activate      # No Windows
-   ```
-
-3. Inicie o servidor FastAPI:
-   ```bash
-   python -m uvicorn src.app:app --reload --host 127.0.0.1 --port 8000
-   ```
-   
-> ⚠️ **Importante**: O backend deve ser iniciado a partir da pasta `backend` para garantir que o arquivo `.env` seja carregado corretamente.
-
-### Frontend
-
-Para iniciar o frontend manualmente:
-
-1. Acesse a pasta do frontend:
-   ```bash
-   cd frontend
-   ```
-
-2. Inicie o servidor de desenvolvimento:
-   ```bash
-   npm run serve
-   ```
-
-A interface estará disponível em http://localhost:3000
+Este projeto está licenciado sob a licença MIT.
